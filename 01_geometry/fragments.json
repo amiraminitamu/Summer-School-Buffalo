@@ -1,0 +1,22 @@
+{
+  "H2Pc_far": {
+    "start_1based": 1,
+    "end_1based": 58,
+    "formula": "C32H18N8"
+  },
+  "H2Pc_near": {
+    "start_1based": 59,
+    "end_1based": 116,
+    "formula": "C32H18N8"
+  },
+  "donor_2H2Pc": {
+    "start_1based": 1,
+    "end_1based": 116,
+    "formula": "C64H36N16"
+  },
+  "acceptor_C60": {
+    "start_1based": 117,
+    "end_1based": 176,
+    "formula": "C60"
+  }
+}
