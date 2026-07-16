@@ -69,15 +69,15 @@ Advisor: Prof. Arkajit Mandal}
 \vspace{-1.2em}
 
 \begin{abstract}
-My goal in this project was to build a small but complete computational bridge from first-principles molecular dynamics to nonadiabatic and open-system charge-transfer dynamics. I studied the 176-atom $2\HtwoPc/\Csixty$ donor--acceptor complex introduced by Yamijala and Huo and replaced the reference DFTB3 electronic Hamiltonian with a PySCF-derived Kohn--Sham model. Ten independent 100 fs trajectories produced 2000 electronic snapshots. Consecutive active spaces were tracked through cross-geometry overlaps, a closest-unitary polar factor, and matrix-logarithm orbital derivative couplings. The resulting Hamiltonians were propagated with Libra classical-path fewest-switches surface hopping and reduced to a validated four-donor plus three-acceptor model for TENSO. Plain CPA-FSSH underestimates the digitized experimental transfer, whereas Boltzmann-rescaled upward hops overestimate it. This is not a failed reproduction; it shows that the kinetics are strongly sensitive to the Hamiltonian and detailed-balance prescription. The reduced model reproduces the full ten-state coherent dynamics with an ensemble RMSE of 0.0183, and short-time TENSO calculations are numerically converged with respect to the main tensor parameters. This capstone is entirely theoretical and computational chemistry; it contains no biological or cybersecurity component.
+In this work, we develop a first-principles workflow for nonadiabatic and open-system charge-transfer dynamics in the 176-atom $2\HtwoPc/\Csixty$ donor--acceptor complex introduced by Yamijala and Huo. We replace the DFTB3 electronic Hamiltonian used in the reference work with a PySCF-derived Kohn--Sham Hamiltonian. We employ ten independent 100 fs molecular-dynamics trajectories, giving a total of 2000 electronic snapshots. The active orbitals are tracked using cross-geometry overlaps, a closest-unitary polar factor, and matrix-logarithm orbital derivative couplings. We then propagate the resulting Hamiltonians using Libra classical-path fewest-switches surface hopping and construct a four-donor plus three-acceptor reduced model for TENSO. We find that plain CPA-FSSH underestimates the digitized experimental transfer, whereas Boltzmann-rescaled upward hops overestimate it. The reduced model reproduces the full ten-state coherent dynamics with an ensemble RMSE of 0.0183. In addition, the short-time TENSO calculations are numerically converged with respect to the principal tensor parameters. Overall, these results demonstrate that the predicted transfer kinetics are strongly sensitive to the electronic Hamiltonian and the detailed-balance prescription. This capstone is entirely theoretical and computational chemistry and contains no biological or cybersecurity component.
 \end{abstract}
 
 \section{Motivation and question}
-Photoinduced charge transfer is often described with a simple donor state, an acceptor state, and one coupling. The real molecular problem is less forgiving. The donor and fullerene manifolds contain several near-degenerate orbitals, nuclear motion rotates those orbitals in time, and the measured charge is a fragment observable rather than the population of one adiabatic state. My central question was therefore:
+Photoinduced charge transfer in donor--acceptor complexes is often described using one donor state, one acceptor state, and a single electronic coupling. In the present system, this two-state picture is not sufficient. The donor and fullerene manifolds contain several nearly degenerate orbitals, nuclear motion continuously mixes these orbitals, and the experimentally relevant quantity is a fragment charge rather than the population of one adiabatic orbital. In this work, we therefore address the following question:
 
 \highlight{\textbf{How much of the early-time $\Csixty$ charge-transfer dynamics can be reproduced by a transparent first-principles workflow, and which approximations control the remaining disagreement with experiment?}}
 
-The aim was not to tune a curve until it matched the published result. I wanted a workflow in which every transformation---from molecular geometry to the final population---could be inspected, tested, and reused.
+The aim of this work is not to empirically tune the calculated population to the published curve. Instead, we construct a workflow in which each transformation, from the molecular geometry to the final fragment population, is explicitly defined and can be tested independently.
 
 \section{System and workflow}
 The neutral complex has formula $\mathrm{C}_{124}\mathrm{H}_{36}\mathrm{N}_{16}$, 176 atoms, and 892 electrons. Atoms 1--116 form the two-phthalocyanine donor and atoms 117--176 form the fullerene acceptor.
@@ -105,10 +105,10 @@ The neutral complex has formula $\mathrm{C}_{124}\mathrm{H}_{36}\mathrm{N}_{16}$
 \draw[arrow] (reduce) -- (bath);
 \draw[arrow] (bath) -- (tenso);
 \end{tikzpicture}
-\caption{The project was organized as one auditable pipeline rather than as independent calculations.}
+\caption{Schematic representation of the computational workflow used in this work.}
 \end{figure}
 
-The calculation proceeded in six physical steps:
+The computational procedure consists of the following six steps:
 \begin{enumerate}
 \item generate thermal nuclear paths with PySCF Born--Oppenheimer AIMD;
 \item compute ten low-lying virtual orbitals and a $\Csixty$ fragment projector at every frame;
@@ -120,33 +120,33 @@ The calculation proceeded in six physical steps:
 
 \section{Methods}
 \subsection{PySCF nuclear and electronic calculations}
-Ten independent 100 fs trajectories were propagated at 300 K with PBE-D3(BJ)/6-31G, density fitting, and a 0.5 fs nuclear step. The electronic structure was converged at each geometry and the nuclei obeyed
+We propagate ten independent 100 fs trajectories at 300 K using PBE-D3(BJ)/6-31G, density fitting, and a 0.5 fs nuclear time step. At each geometry, the electronic structure is converged and the nuclear motion is governed by
 \begin{equation}
 M_A\ddot{\bm R}_A(t)=-\frac{\partial E_{\mathrm{KS}}(\bm R)}{\partial \bm R_A}.
 \end{equation}
-The trajectories are ground-state, thermostatted nuclear paths. They do not themselves describe photoexcitation; they provide the time-dependent geometries along which the electronic Hamiltonian fluctuates.
+These trajectories are ground-state, thermostatted nuclear paths and do not directly describe photoexcitation. Instead, they provide the time-dependent molecular geometries used to construct the fluctuating electronic Hamiltonian.
 
-At each frame, the first ten unoccupied Kohn--Sham orbitals define the active space. The initial electronic state is the isolated donor-dimer LUMO projected into this space,
+At each frame, we define the active space using the first ten unoccupied Kohn--Sham orbitals. The initial electronic state is obtained by projecting the isolated donor-dimer LUMO into this active space,
 \begin{equation}
 b_i=\langle \psi_i|\phi_D\rangle,
 \qquad
 c_i(0)=\frac{b_i}{\sqrt{\sum_j|b_j|^2}}.
 \end{equation}
-The active space captures more than 99.75\% of the donor state throughout the validated trajectories.
+The resulting ten-state active space captures more than 99.75\% of the projected donor state throughout the validated trajectories.
 
 \subsection{Cross-geometry tracking and orbital derivative couplings}
-The active orbitals at adjacent geometries are compared through the cross-geometry overlap
+We compare the active orbitals at adjacent geometries using the cross-geometry overlap
 \begin{equation}
 O_{ij}^{(n)}=
 \left\langle\psi_i(\bm R_n)\middle|\psi_j(\bm R_{n+1})\right\rangle.
 \end{equation}
-A Hungarian assignment maximizes the total absolute overlap, and orbital signs are corrected so that the matched diagonal elements are positive. Because a finite active space is only approximately unitary, I use the closest-unitary polar factor
+A Hungarian assignment is used to maximize the total absolute overlap, after which the orbital signs are chosen so that the matched diagonal elements are positive. Since the finite active-space overlap is only approximately unitary, we use its closest-unitary polar factor,
 \begin{equation}
 \bm O=\bm L\bm\Sigma\bm R^{\dagger},
 \qquad
 \bm U=\bm L\bm R^{\dagger}.
 \end{equation}
-The midpoint orbital derivative-coupling matrix is then
+The midpoint orbital derivative-coupling matrix is defined as
 \begin{equation}
 \bm D_{n+1/2}=\frac{1}{\Delta t}\log \bm U_n,
 \qquad
@@ -157,60 +157,60 @@ and the propagated single-particle vibronic Hamiltonian is
 \bm H_{\mathrm{vib},n+1/2}
 =\bm E_{n+1/2}-i\bm D_{n+1/2}
 \end{equation}
-in atomic units. These are Kohn--Sham orbital time-derivative couplings. No TDDFT excited-state calculation was performed.
+in atomic units. We emphasize that $\bm D$ contains Kohn--Sham orbital time-derivative couplings. It does not contain many-electron TDDFT excited-state nonadiabatic couplings, and no TDDFT calculation is performed in this work.
 
 \subsection{Fragment charge and Libra dynamics}
-The fullerene population must retain coherence between adiabatic orbitals. If $\bm P_{\Csixty}$ is the symmetrized Mulliken projector in the active space, then
+The fullerene charge population must include the coherences between the adiabatic orbitals. We define the symmetrized Mulliken projector onto the fullerene fragment as $\bm P_{\Csixty}$. The coherent fullerene population is then
 \begin{equation}
 P_{\Csixty}^{\mathrm{coh}}(t)
 =\bm c^{\dagger}(t)\bm P_{\Csixty}(t)\bm c(t).
 \end{equation}
-For the closest comparison with the population convention used in the reference CPA-FSSH calculation, I also evaluate
+For comparison with the population convention used in the reference CPA-FSSH calculation, we also evaluate
 \begin{equation}
 P_{\Csixty}^{\mathrm{hyb}}
 =P_{\mathrm{active,diag}}
 +P_{\mathrm{coh}}-P_{\mathrm{coh,diag}},
 \end{equation}
-which replaces the density-matrix diagonal with stochastic active-surface populations while retaining coefficient-based coherences off diagonal.
+This expression replaces the diagonal elements of the electronic density matrix by the stochastic active-surface populations, while the off-diagonal elements are obtained from the propagated electronic coefficients.
 
-The electronic amplitudes are propagated exactly for each piecewise-constant midpoint Hamiltonian,
+For each piecewise-constant midpoint Hamiltonian, the electronic amplitudes are propagated using the exact matrix exponential,
 \begin{equation}
 \bm c(t+\delta t)=
 \exp[-i\bm H_{\mathrm{vib}}\delta t]\bm c(t),
 \end{equation}
-while Libra supplies active-state-specific FSSH probabilities for 20,000 surface histories per nuclear path. I compare plain FSSH with a sensitivity calculation in which thermally uphill hops are multiplied by
+Libra is then used to evaluate the active-state-specific FSSH probabilities for 20,000 surface histories on each nuclear path. In addition to plain FSSH, we perform a sensitivity calculation in which thermally uphill hops are multiplied by
 \begin{equation}
 \exp\left[-\frac{E_j-E_i}{k_{\mathrm B}T}\right],
 \qquad E_j>E_i.
 \end{equation}
 
 \subsection{Reduced model and TENSO bath}
-The complete four-dimensional donor subspace and the lower three fullerene states define the selected seven-state basis $\bm B(t)$. The reduced Hamiltonian is constructed as
+The selected seven-state model contains the complete four-dimensional donor subspace and the three lowest fullerene states. Denoting this time-dependent basis by $\bm B(t)$, the reduced Hamiltonian is
 \begin{equation}
 \bm H_{\mathrm{red}}(t)=
 \bm B^{\dagger}(t)\bm E(t)\bm B(t)-i\bm D_{\mathrm{red}}(t),
 \end{equation}
-where $\bm D_{\mathrm{red}}$ is obtained from consecutive reduced overlaps using the same polar-factor and matrix-log procedure.
+where $\bm D_{\mathrm{red}}$ is obtained from consecutive reduced-space overlaps using the same polar-decomposition and matrix-logarithm procedure described above.
 
 The within-trajectory fluctuations are expanded in an orthonormal Hermitian operator basis,
 \begin{equation}
 \delta\bm H_r(t)=\sum_{\alpha}x_{\alpha r}(t)\bm Q_{\alpha}.
 \end{equation}
-PCA identifies the dominant noncommuting bath operators. Each retained classical autocorrelation is fitted to
+We apply PCA to identify the dominant noncommuting system--bath operators. The classical autocorrelation function of each retained PCA coordinate is fitted to
 \begin{equation}
 \frac{C_{\alpha}(t)}{C_{\alpha}(0)}=
  f_{\alpha}e^{-t/\tau_{D,\alpha}}
  +(1-f_{\alpha})e^{-t/\tau_{B,\alpha}}
  \cos(\omega_{B,\alpha}t),
 \end{equation}
-which is mapped to Drude and underdamped-Brownian channels for TENSO. The high-temperature relation $C_{\alpha}(0)=2\lambda_{\alpha}k_{\mathrm B}T$ sets the reorganization energies.
+The fitted relaxational and oscillatory contributions are mapped to Drude and underdamped-Brownian channels in TENSO. The corresponding reorganization energies are obtained using the high-temperature relation $C_{\alpha}(0)=2\lambda_{\alpha}k_{\mathrm B}T$.
 
 \section{Results and interpretation}
 \subsection{Tracking and numerical stability}
-Across all 2000 production snapshots, the minimum singular value of a consecutive active-space overlap is 0.999580. This is the most important tracking diagnostic: the ten-state subspace remains continuous even when individual fullerene orbitals rotate strongly. Coherent propagation conserves the electronic norm to machine precision, and the fragment populations sum to unity within numerical noise.
+Across all 2000 production snapshots, the minimum singular value of the consecutive active-space overlap matrices is 0.999580. This value shows that the ten-state subspace remains continuous, even when individual fullerene orbitals undergo substantial rotations within the near-degenerate manifold. The coherent propagation conserves the electronic norm to machine precision, and the donor and fullerene fragment populations sum to unity within numerical precision.
 
 \subsection{Libra versus experiment}
-At 99.5 fs, the digitized experimental trace gives $P_{\Csixty}=0.608567$. Plain CPA-FSSH gives 0.280850, whereas the Boltzmann-rescaled variant gives 0.898903.
+At 99.5 fs, the approximate digitized experimental trace gives $P_{\Csixty}=0.608567$. We obtain 0.280850 using plain CPA-FSSH and 0.898903 using the Boltzmann-rescaled variant.
 
 \begin{figure}[H]
 \centering
@@ -240,17 +240,17 @@ At 99.5 fs, the digitized experimental trace gives $P_{\Csixty}=0.608567$. Plain
 \caption{The experiment lies between the two FSSH prescriptions at the endpoint. The values are not rescaled.}
 \end{figure}
 
-The full-window RMSE is 0.1922 for plain FSSH and 0.3046 for the Boltzmann-rescaled calculation. The coherent coefficient curve is identical in the two runs; only the stochastic active-surface populations change. The large response to the Boltzmann factor is physically understandable. The donor manifold is approximately 0.3 eV above the lowest fullerene states, while $k_{\mathrm B}T\approx0.026$ eV at 300 K. Once a surface history reaches a low fullerene state, an uphill return can therefore be suppressed by several orders of magnitude.
+The RMSE over the complete 0--99.5 fs interval is 0.1922 for plain FSSH and 0.3046 for the Boltzmann-rescaled calculation. The coherent electronic amplitudes are identical in the two calculations; the difference arises only from the stochastic active-surface populations. The strong effect of the Boltzmann factor follows from the electronic energy scale. The donor manifold lies approximately 0.3 eV above the lowest fullerene states, whereas $k_{\mathrm B}T\approx0.026$ eV at 300 K. Therefore, after a trajectory reaches a low fullerene state, an energetically uphill return can be suppressed by several orders of magnitude.
 
-\highlight{\textbf{Interpretation.} Plain FSSH permits substantial back-transfer and is too slow. Boltzmann rescaling nearly traps trajectories in the lower fullerene manifold and is too fast. The calculation therefore identifies detailed balance and the underlying electronic energy landscape as major sources of model sensitivity.}
+\highlight{\textbf{Interpretation.} Plain FSSH allows substantial back-transfer and underestimates the transfer rate. In contrast, Boltzmann rescaling strongly suppresses the uphill return to the donor manifold and overestimates the transfer rate. Therefore, the experimental curve lies between the two FSSH prescriptions, demonstrating a strong sensitivity to detailed balance and to the underlying electronic energy landscape.}
 
 \subsection{Reduced Hamiltonian and bath}
-The selected $4D+3A$ model gives a final ensemble population of 0.246209 and reproduces the full ten-state coherent ensemble with RMSE 0.018301. This is the smallest model I found that retained both the donor-state structure and the low fullerene manifold without losing the charge-transfer observable.
+The selected $4D+3A$ model gives a final ensemble population of 0.246209 and reproduces the full ten-state coherent ensemble with an RMSE of 0.018301. Among the tested reduced spaces, this is the smallest model that retains the complete donor subspace and the relevant low-energy fullerene manifold while preserving the charge-transfer observable.
 
-Eighteen PCA components describe the sampled Hamiltonian fluctuations; the leading twelve retain 90.764\% of the dynamic variance. The within-path fluctuation RMS is 0.20880 eV, while the between-path static-disorder RMS is 0.14255 eV. Keeping these two contributions separate prevents static replica-to-replica offsets from being mistaken for a rapidly fluctuating bath.
+The sampled Hamiltonian fluctuations contain eighteen PCA components, of which the leading twelve retain 90.764\% of the dynamic variance. The RMS magnitude of the within-trajectory fluctuations is 0.20880 eV, while the RMS magnitude of the between-trajectory static disorder is 0.14255 eV. We treat these contributions separately so that the trajectory-dependent mean offsets are not included in the dynamical bath correlation functions.
 
 \subsection{TENSO convergence}
-The four-mode, 5 fs TENSO endpoint is approximately 0.016691. Increasing the local dimension, initial tensor rank, Pad\'e order, or halving the output step changes this value by at most $1.1\times10^{-4}$. With a maximum auxiliary rank of 64, the maximum trace error is approximately $6.2\times10^{-7}$ and the Hermiticity error is approximately $2.5\times10^{-5}$.
+For the four-mode model, the 5 fs TENSO endpoint is approximately 0.016691. Increasing the local dimension, the initial tensor rank, or the Pad\'e order, and reducing the time step from 0.05 to 0.025 fs, changes the final population by at most $1.1\times10^{-4}$. Using a maximum auxiliary rank of 64, the maximum trace error is approximately $6.2\times10^{-7}$ and the maximum Hermiticity error is approximately $2.5\times10^{-5}$.
 
 \begin{table}[H]
 \centering
@@ -270,10 +270,10 @@ Calculation & Time (fs) & Final $P_{\Csixty}$ & Max. trace error \\
 \end{tabular}
 \end{table}
 
-A 12-mode, 10 fs production calculation is running, but it is not used in the conclusions reported here. I prefer to leave one result incomplete rather than replace it with an extrapolation that the calculation has not earned.
+The 12-mode, 10 fs production calculation was not complete at the time of writing and is therefore not included in the analysis or conclusions presented below.
 
 \section{Limitations and reproducibility}
-The principal limitations are methodological rather than numerical:
+The principal approximations and limitations of the present calculations are:
 \begin{itemize}
 \item the electronic dynamics use ground-state Kohn--Sham orbitals rather than many-electron excited states;
 \item the nuclei follow prescribed, thermostatted ground-state paths with no electronic back-reaction;
@@ -286,12 +286,12 @@ The full workflow, exact starting structures, random seeds, portable Slurm files
 \begin{center}
 \href{https://github.com/amiraminitamu/Summer-School-Buffalo}{\code{github.com/amiraminitamu/Summer-School-Buffalo}}
 \end{center}
-Generated trajectories and tensor working files are excluded because of size, but every omitted artifact can be regenerated from the documented stages.
+The generated trajectories and tensor-network working files are not stored in the repository because of their size. However, the documented inputs, random seeds, scripts, and run parameters are sufficient to regenerate these data.
 
 \section{Conclusions}
-I began this project with a practical question: can PySCF, Libra, and TENSO be connected into one physically transparent charge-transfer workflow within the time scale of a summer school? The answer is yes. The resulting code goes from a 176-atom molecular structure to tracked orbital Hamiltonians, stochastic surface hopping, a validated reduced model, and a structured open-system bath.
+In this work, we develop a computational workflow that connects PySCF electronic-structure calculations, orbital tracking, Libra surface hopping, reduced-model construction, and TENSO open-system dynamics for a 176-atom donor--acceptor complex. The workflow provides a direct connection between the molecular geometry, the time-dependent electronic Hamiltonian, and the calculated fullerene charge population.
 
-The results do not support the claim that the present PBE-based model quantitatively reproduces the experimental transfer. Plain FSSH is too slow, while Boltzmann-rescaled FSSH is too fast. That disagreement is the main scientific result: agreement with experiment is not controlled by one universal surface-hopping correction, but by the combination of electronic structure, detailed balance, coherence, and bath treatment. The project therefore provides both a reproducible computational prototype and a clear next question---which part of the Hamiltonian and open-system model must change before the experimental time scale emerges without empirical tuning?
+We find that the present PBE-based model does not quantitatively reproduce the experimental transfer. Plain CPA-FSSH underestimates the transfer rate, whereas the Boltzmann-rescaled calculation overestimates it. Therefore, the agreement with experiment cannot be attributed to a universal surface-hopping correction alone. Instead, it depends on the electronic Hamiltonian, the treatment of detailed balance, the coherent fragment observable, and the bath approximation. Overall, this work establishes a reproducible PySCF--Libra--TENSO workflow and identifies the principal approximations that must be improved to recover the experimental time scale without empirical tuning.
 
 \section*{References}
 \begin{enumerate}[label={\arabic*.},leftmargin=1.6em]
