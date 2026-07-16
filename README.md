@@ -33,6 +33,15 @@ This is deliberately not a curve-fitting exercise. The calculations use a PySCF-
 
 The supported conclusion is that the transfer kinetics are highly method-sensitive. The project does **not** claim exact reproduction of the experimental trace or numerically exact 100 fs dynamics for the full 176-atom system.
 
+## Project report
+
+The concise six-page capstone report states the physical question, computational steps, equations, results, limitations, and supported conclusions in one cohesive document:
+
+- [Read the compiled PDF](report/Project_Report.pdf)
+- [View the LaTeX source](report/Project_Report.tex)
+
+The PDF is rebuilt automatically from the tracked LaTeX source on the `submission-ready` branch.
+
 ## Repository map
 
 | Path | Purpose |
@@ -42,6 +51,7 @@ The supported conclusion is that the transfer kinetics are highly method-sensiti
 | `03_aimd/production_starts/` | Exact starting geometries and replica manifest |
 | `03_aimd/scripts/` | Eleven ordered production and analysis entry points |
 | `03_aimd/slurm/` | Portable Slurm launchers without usernames or absolute cluster paths |
+| `report/` | Submission report in LaTeX and compiled PDF |
 | `docs/SCIENTIFIC_METHOD.md` | Equations, approximations, and observable definitions |
 | `docs/REPRODUCIBILITY.md` | Environment setup and complete run order |
 | `docs/RUBRIC_MAP.md` | Where each grading criterion is demonstrated |
