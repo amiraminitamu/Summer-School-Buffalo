@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: "Please cite this repository and the underlying system paper."
+title: "First-principles charge-transfer dynamics in 2H2Pc/C60"
+type: software
+authors:
+  - family-names: Amini
+    given-names: Amir
+repository-code: "https://github.com/amiraminitamu/Summer-School-Buffalo"
+date-released: 2026-07-16
+license: MIT
+preferred-citation:
+  type: generic
+  title: "First-principles PySCF-Libra-TENSO workflow for 2H2Pc/C60 charge transfer"
+  authors:
+    - family-names: Amini
+      given-names: Amir
+  year: 2026

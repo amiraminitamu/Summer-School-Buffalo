@@ -1,0 +1,14 @@
+name: pc60-pyscf
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - numpy>=1.26
+  - scipy>=1.11
+  - matplotlib>=3.8
+  - pandas>=2.1
+  - pyscf>=2.3
+  - geometric
+  - pip
+  - pip:
+      - pyscf-dispersion

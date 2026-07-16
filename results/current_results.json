@@ -1,0 +1,13 @@
+{
+  "system": "2H2Pc/C60",
+  "n_atoms": 176,
+  "n_electrons": 892,
+  "aimd": {"trajectories": 10, "duration_fs": 100.0, "time_step_fs": 0.5, "electronic_snapshots": 2000},
+  "tracking": {"minimum_consecutive_overlap_singular_value": 0.99958},
+  "libra_plain": {"final_hybrid_c60_population_99_5fs": 0.28085041, "final_coherent_c60_population_99_5fs": 0.27978528, "digitized_experiment_99_5fs": 0.60856707, "rmse": 0.19221366, "mae": 0.17923229},
+  "libra_boltzmann": {"final_hybrid_c60_population_99_5fs": 0.89890263, "rmse": 0.30455336, "mae": 0.27570139},
+  "reduced_4d3a": {"final_population": 0.24620851, "ensemble_rmse": 0.01830058},
+  "bath": {"total_pca_modes": 18, "retained_modes": 12, "retained_variance_fraction": 0.90764, "dynamic_within_path_rms_eV": 0.2088, "static_between_path_rms_eV": 0.14255},
+  "tenso_4mode_5fs": {"final_c60_population": 0.01669056, "maximum_trace_error": 6.200806399238252e-07, "maximum_hermiticity_error": 2.509695599072203e-05, "maximum_auxiliary_rank": 64},
+  "experiment_note": "Approximate digitization of published Figure 3A; not original raw data."
+}
