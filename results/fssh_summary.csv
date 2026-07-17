@@ -1,0 +1,4 @@
+method,final_c60_population_99_5fs,rmse,mae,first_p_ge_0_25_fs,first_p_ge_0_50_fs
+plain_cpa_fssh,0.28085041,0.19221366,0.17923229,64.5,
+boltzmann_cpa_fssh,0.89890263,0.30455336,0.27570139,12.5,32.5
+digitized_experiment,0.60856707,,,,

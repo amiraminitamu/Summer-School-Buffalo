@@ -1,0 +1,45 @@
+{
+  "system": "2H2Pc/C60",
+  "scope": "Theoretical charge-transport study; no cybersecurity or biological modeling.",
+  "n_atoms": 176,
+  "n_electrons": 892,
+  "aimd": {
+    "trajectories": 10,
+    "duration_fs": 100.0,
+    "time_step_fs": 0.5,
+    "electronic_snapshots": 2000
+  },
+  "tracking": {
+    "minimum_consecutive_overlap_singular_value": 0.99958
+  },
+  "coherent_full_10state": {
+    "final_c60_population_99_5fs_mean": 0.2797852840360925,
+    "final_c60_population_99_5fs_ci95": 0.09634879571036511
+  },
+  "reduced_4d3a": {
+    "final_c60_population_99_5fs_mean": 0.2462085110650049,
+    "final_c60_population_99_5fs_ci95": 0.08820080696585446,
+    "ensemble_curve_rmse": 0.01830057529602825
+  },
+  "libra_plain": {
+    "final_hybrid_c60_population_99_5fs": 0.28085041,
+    "rmse": 0.19221366,
+    "mae": 0.17923229
+  },
+  "libra_boltzmann": {
+    "final_hybrid_c60_population_99_5fs": 0.89890263,
+    "rmse": 0.30455336,
+    "mae": 0.27570139
+  },
+  "coherence_and_flux": {
+    "maximum_mean_donor_acceptor_coherence": 0.4261616654813209,
+    "time_of_maximum_mean_coherence_fs": 77.5,
+    "dominant_positive_flux_channel": "D2->A1",
+    "dominant_positive_flux": 0.2739028682179946,
+    "mean_flux_continuity_rmse_per_fs": 6.248717024270712e-05
+  },
+  "digitized_experiment": {
+    "final_c60_population_99_5fs": 0.60856707,
+    "note": "Approximate digitization of published Figure 3A; not original raw data."
+  }
+}

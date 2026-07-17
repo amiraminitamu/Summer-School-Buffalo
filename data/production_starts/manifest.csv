@@ -1,0 +1,11 @@
+replica,source_frame,source_time_fs,xyz
+0,45,22.5,data/production_starts/start_00.xyz
+1,49,24.5,data/production_starts/start_01.xyz
+2,54,27.0,data/production_starts/start_02.xyz
+3,58,29.0,data/production_starts/start_03.xyz
+4,62,31.0,data/production_starts/start_04.xyz
+5,67,33.5,data/production_starts/start_05.xyz
+6,71,35.5,data/production_starts/start_06.xyz
+7,75,37.5,data/production_starts/start_07.xyz
+8,80,40.0,data/production_starts/start_08.xyz
+9,84,42.0,data/production_starts/start_09.xyz

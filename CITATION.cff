@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: "Please cite this repository and the underlying system paper."
+title: "First-principles coherent and surface-hopping charge-transfer dynamics in 2H2Pc/C60"
+type: software
+authors:
+  - family-names: Amini
+    given-names: Amirhosein
+repository-code: "https://github.com/amiraminitamu/Summer-School-Buffalo"
+date-released: 2026-07-17
+license: MIT
+preferred-citation:
+  type: generic
+  title: "First-principles coherent and surface-hopping charge-transfer dynamics in 2H2Pc/C60"
+  authors:
+    - family-names: Amini
+      given-names: Amirhosein
+  year: 2026

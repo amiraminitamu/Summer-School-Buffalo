@@ -1,1 +1,0 @@
-The 4D6A model spans the complete ten-state active space and must reproduce the full result to numerical precision. Models with low instantaneous capture or projected-map singular values substantially below one are not dynamically closed.

@@ -1,58 +1,45 @@
 # Python
 __pycache__/
-*.pyc
-*.pyo
+*.py[cod]
+.pytest_cache/
 .ipynb_checkpoints/
 
-# Conda / virtual environments
+# Environments
 .conda/
 venv/
 .env/
 
-# Slurm and runtime logs
-logs/
+# Scheduler and logs
 slurm-*.out
 *.err
+*.log
 *.debug.log
-*.dat.log
+*.md.data
 
-# Large computational outputs
-output/
-output_*/
-outputs/
-scratch/
-tmp/
+# Large computational intermediates
+output*/
 checkpoints/
 *.chk
-*.h5
-*.hdf5
-*.npy
 *.npz
-*.cube
-*.wfn
-*.gbw
+*.npy
 *.molden
 *.traj
 *.restart
+*.md.xyz
+*.tar.gz
+*.zip
 
-# AIMD trajectory/data directories
-03_aimd/output_aimd*/
-03_aimd/output_tracked/
-03_aimd/output_libra/
-03_aimd/output_tenso/
-
-# LaTeX build files
+# LaTeX build products
 *.aux
-*.log
-*.out
-*.toc
-*.synctex.gz
-*.fls
+*.bbl
+*.blg
 *.fdb_latexmk
+*.fls
+*.out
+*.synctex.gz
+*.toc
 
-# OS/editor files
+# OS and editors
 .DS_Store
 *.swp
 *~
-*.tar.gz
-03_aimd/electronic_raw_2000frames_backup.tar.gz

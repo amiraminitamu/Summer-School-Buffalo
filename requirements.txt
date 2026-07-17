@@ -1,4 +1,0 @@
-pyscf>=2.3
-pyscf-dispersion
-geometric
-numpy

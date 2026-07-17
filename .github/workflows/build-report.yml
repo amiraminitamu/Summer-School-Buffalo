@@ -1,0 +1,48 @@
+name: Build capstone report
+
+on:
+  push:
+    branches:
+      - submission-ready
+    paths:
+      - "report/Project_Report.tex"
+      - "results/figures/**"
+      - ".github/workflows/build-report.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-report:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: submission-ready
+          fetch-depth: 0
+
+      - name: Polish report source
+        run: sed -i 's/indepently/independently/g' report/Project_Report.tex
+
+      - name: Install LaTeX
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y latexmk texlive-latex-extra texlive-science lmodern
+
+      - name: Compile report
+        working-directory: report
+        run: latexmk -pdf -interaction=nonstopmode -halt-on-error Project_Report.tex
+
+      - name: Commit source and compiled PDF
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add report/Project_Report.tex report/Project_Report.pdf
+          if git diff --cached --quiet; then
+            echo "Report source and PDF are current."
+          else
+            git commit -m "Polish and rebuild figure-rich capstone report"
+            git push origin submission-ready
+          fi

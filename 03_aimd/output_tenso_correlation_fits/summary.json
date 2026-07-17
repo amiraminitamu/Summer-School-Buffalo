@@ -1,9 +1,0 @@
-{
-  "input": "output_tenso_bath_analysis_hvib/hamiltonian_fluctuation_pca.npz",
-  "modes_fitted": 12,
-  "variance_fraction_retained": 0.9076400550322404,
-  "fit_window_fs": 20.0,
-  "median_normalized_rmse": 0.02013134891800199,
-  "maximum_normalized_rmse": 0.024743321458668196,
-  "important_note": "These are fits to classical correlation functions. They are not yet TENSO-ready quantum bath parameters. A declared quantum correction and TENSO convention mapping are required next."
-}
