@@ -1,0 +1,335 @@
+name: Reorganize source tree
+
+on:
+  push:
+    branches:
+      - submission-ready
+    paths:
+      - ".github/workflows/reorganize-source.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  reorganize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: submission-ready
+          fetch-depth: 0
+
+      - name: Move code and inputs into final layout
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          mkdir -p src/slurm data/production_starts
+
+          git mv 01_geometry/validate_geometry.py src/00_validate_geometry.py
+          git mv 01_geometry/2H2Pc_C60.xyz data/2H2Pc_C60.xyz
+          git show origin/main:01_geometry/fragments.json > data/fragments.json
+
+          git show origin/main:02_pyscf_static/00_frontier_analysis.py > src/01_frontier_analysis.py
+          git show origin/main:02_pyscf_static/01_relax_geometry.py > src/02_relax_geometry.py
+
+          git mv 03_aimd/production_starts/manifest.csv data/production_starts/manifest.csv
+          for file in 03_aimd/production_starts/start_*.xyz; do
+            git mv "$file" data/production_starts/
+          done
+          git mv 03_aimd/experiment_shg_digitized.csv data/experiment_shg_digitized.csv
+
+          git mv 03_aimd/scripts/01_run_aimd.py src/04_run_aimd.py
+          git mv 03_aimd/scripts/02_extract_electronic.py src/05_extract_electronic.py
+          git mv 03_aimd/scripts/03_track_states.py src/06_track_states.py
+          git mv 03_aimd/scripts/04_run_fssh.py src/07_run_fssh.py
+          git mv 03_aimd/scripts/05_analyze_fssh.py src/08_analyze_fssh.py
+          git mv 03_aimd/scripts/06_build_reduced_model.py src/09_build_reduced_model.py
+          git mv 03_aimd/scripts/10_plot_libra_experiment.py src/10_plot_libra_experiment.py
+          git mv 03_aimd/scripts/11_compare_fssh_variants.py src/11_compare_fssh_variants.py
+          git mv 03_aimd/scripts/12_analyze_coherent_mechanism.py src/12_analyze_coherent_mechanism.py
+
+          git mv 03_aimd/slurm/01_aimd_array.slurm src/slurm/01_aimd_array.slurm
+          git mv 03_aimd/slurm/02_electronic_array.slurm src/slurm/02_electronic_array.slurm
+          git mv 03_aimd/slurm/03_tracking_array.slurm src/slurm/03_tracking_array.slurm
+          git mv 03_aimd/slurm/04_libra_array.slurm src/slurm/04_libra_array.slurm
+
+          rm -f 03_aimd/scripts/README.md
+          rmdir 01_geometry 03_aimd/production_starts 03_aimd/scripts 03_aimd/slurm 03_aimd
+
+      - name: Add preparation code and update paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          root = Path('.')
+
+          def replace_module_docstring(path: Path, sentence: str) -> None:
+              text = path.read_text()
+              start = text.find('"""')
+              future = text.find('from __future__')
+              if 0 <= start < future:
+                  end = text.find('"""', start + 3)
+                  if end >= 0:
+                      text = text[:start] + f'"""{sentence}"""' + text[end + 3:]
+              path.write_text(text)
+
+          docstrings = {
+              'src/01_frontier_analysis.py': 'Analyze frontier orbitals and project the isolated donor LUMO into the complex active space.',
+              'src/02_relax_geometry.py': 'Relax the published 2H2Pc/C60 structure with PySCF and geomeTRIC.',
+              'src/04_run_aimd.py': 'Run Born-Oppenheimer AIMD for the neutral 2H2Pc/C60 complex.',
+              'src/05_extract_electronic.py': 'Extract ten-state PySCF electronic data along one AIMD trajectory.',
+              'src/10_plot_libra_experiment.py': 'Build the final Libra ensemble and experiment comparison figures.',
+              'src/11_compare_fssh_variants.py': 'Compare plain and Boltzmann-rescaled CPA-FSSH with experiment.',
+              'src/12_analyze_coherent_mechanism.py': 'Analyze coherent dynamics, reduced-model accuracy, and donor-acceptor probability currents.',
+          }
+          for name, sentence in docstrings.items():
+              replace_module_docstring(Path(name), sentence)
+
+          path = Path('src/00_validate_geometry.py')
+          text = path.read_text()
+          text = text.replace(
+              "HERE = Path(__file__).resolve().parent\n",
+              "HERE = Path(__file__).resolve().parent\nROOT = HERE.parent\n",
+          )
+          text = text.replace("HERE / '2H2Pc_C60.xyz'", "ROOT / 'data' / '2H2Pc_C60.xyz'")
+          path.write_text(text)
+
+          for name in ('src/01_frontier_analysis.py', 'src/02_relax_geometry.py'):
+              path = Path(name)
+              text = path.read_text()
+              text = text.replace("ROOT / '01_geometry' / '2H2Pc_C60.xyz'", "ROOT / 'data' / '2H2Pc_C60.xyz'")
+              text = text.replace("ROOT / '01_geometry' / 'fragments.json'", "ROOT / 'data' / 'fragments.json'")
+              text = text.replace("HERE / 'output_static'", "ROOT / 'output_static'")
+              text = text.replace("HERE / 'output_relax'", "ROOT / 'output_relax'")
+              text = text.replace('PySCF -> Libra/TENSO', 'PySCF-to-Libra')
+              path.write_text(text)
+
+          path = Path('src/04_run_aimd.py')
+          text = path.read_text()
+          text = text.replace('ROOT = HERE.parents[1]', 'ROOT = HERE.parent')
+          text = text.replace('ROOT / "01_geometry" / "2H2Pc_C60.xyz"', 'ROOT / "data" / "2H2Pc_C60.xyz"')
+          text = text.replace('default=HERE / "output_aimd"', 'default=ROOT / "output_aimd"')
+          path.write_text(text)
+
+          for name in ('src/10_plot_libra_experiment.py', 'src/11_compare_fssh_variants.py', 'src/12_analyze_coherent_mechanism.py'):
+              path = Path(name)
+              text = path.read_text().replace(
+                  'Path("experiment_shg_digitized.csv")',
+                  'Path("data/experiment_shg_digitized.csv")',
+              )
+              path.write_text(text)
+
+          replacements = {
+              'scripts/01_run_aimd.py': 'src/04_run_aimd.py',
+              'scripts/02_extract_electronic.py': 'src/05_extract_electronic.py',
+              'scripts/03_track_states.py': 'src/06_track_states.py',
+              'scripts/04_run_fssh.py': 'src/07_run_fssh.py',
+              'scripts/05_analyze_fssh.py': 'src/08_analyze_fssh.py',
+              'scripts/06_build_reduced_model.py': 'src/09_build_reduced_model.py',
+              'scripts/10_plot_libra_experiment.py': 'src/10_plot_libra_experiment.py',
+              'scripts/11_compare_fssh_variants.py': 'src/11_compare_fssh_variants.py',
+              'scripts/12_analyze_coherent_mechanism.py': 'src/12_analyze_coherent_mechanism.py',
+              'slurm/01_aimd_array.slurm': 'src/slurm/01_aimd_array.slurm',
+              'slurm/02_electronic_array.slurm': 'src/slurm/02_electronic_array.slurm',
+              'slurm/03_tracking_array.slurm': 'src/slurm/03_tracking_array.slurm',
+              'slurm/04_libra_array.slurm': 'src/slurm/04_libra_array.slurm',
+              'production_starts/start_': 'data/production_starts/start_',
+              '03_aimd/production_starts/': 'data/production_starts/',
+              '03_aimd/experiment_shg_digitized.csv': 'data/experiment_shg_digitized.csv',
+              'experiment_shg_digitized.csv': 'data/experiment_shg_digitized.csv',
+              'Run from `03_aimd/`:': 'Run from the repository root:',
+          }
+
+          for name in [
+              'README.md',
+              'docs/REPRODUCIBILITY.md',
+              'docs/SCIENTIFIC_METHOD.md',
+              'docs/RESULTS.md',
+              'src/slurm/01_aimd_array.slurm',
+              'src/slurm/02_electronic_array.slurm',
+              'src/slurm/03_tracking_array.slurm',
+              'src/slurm/04_libra_array.slurm',
+          ]:
+              path = Path(name)
+              text = path.read_text()
+              for old, new in replacements.items():
+                  text = text.replace(old, new)
+              path.write_text(text)
+
+          manifest = Path('data/production_starts/manifest.csv')
+          text = manifest.read_text()
+          text = re.sub(r'production_starts/(start_\d\d\.xyz)', r'data/production_starts/\1', text)
+          manifest.write_text(text)
+
+          Path('src/03_prepare_replicas.py').write_text('''#!/usr/bin/env python3
+          """Extract the ten production starts listed in the tracked manifest."""
+          from __future__ import annotations
+
+          import argparse
+          import csv
+          from pathlib import Path
+
+
+          def read_frames(path: Path, natoms: int) -> list[list[str]]:
+              lines = path.read_text().splitlines()
+              block = natoms + 2
+              if len(lines) % block:
+                  raise ValueError(f"{path} does not contain complete XYZ frames")
+              return [lines[i:i + block] for i in range(0, len(lines), block)]
+
+
+          def main() -> None:
+              parser = argparse.ArgumentParser()
+              parser.add_argument('--trajectory', type=Path, required=True)
+              parser.add_argument(
+                  '--manifest', type=Path,
+                  default=Path('data/production_starts/manifest.csv'),
+              )
+              parser.add_argument('--natoms', type=int, default=176)
+              args = parser.parse_args()
+
+              frames = read_frames(args.trajectory, args.natoms)
+              with args.manifest.open(newline='') as handle:
+                  rows = list(csv.DictReader(handle))
+
+              for row in rows:
+                  frame = int(row['source_frame'])
+                  output = Path(row['xyz'])
+                  output.parent.mkdir(parents=True, exist_ok=True)
+                  output.write_text('\n'.join(frames[frame]) + '\n')
+                  print(f"Wrote {output} from frame {frame}")
+
+
+          if __name__ == '__main__':
+              main()
+          '''.replace('          ', ''))
+
+          Path('src/slurm/00_initialization.slurm').write_text('''#!/bin/bash
+          #SBATCH --job-name=pc60_init
+          #SBATCH --nodes=1
+          #SBATCH --ntasks=1
+          #SBATCH --cpus-per-task=64
+          #SBATCH --mem=100G
+          #SBATCH --time=24:00:00
+          #SBATCH --output=logs/initialization_%j.log
+
+          set -euo pipefail
+          cd "${SLURM_SUBMIT_DIR}"
+          mkdir -p logs output_static output_relax
+          export OMP_NUM_THREADS="${SLURM_CPUS_PER_TASK}"
+          export MKL_NUM_THREADS="${SLURM_CPUS_PER_TASK}"
+          export OPENBLAS_NUM_THREADS="${SLURM_CPUS_PER_TASK}"
+          PYTHON="${PYSCF_PYTHON:-python}"
+
+          "${PYTHON}" src/01_frontier_analysis.py \\
+            --xyz data/2H2Pc_C60.xyz --fragments data/fragments.json \\
+            --basis 6-31g --xc pbe-d3bj --grid-level 0 \\
+            --threads "${SLURM_CPUS_PER_TASK}" --memory-mb 95000 \\
+            --outdir output_static
+
+          "${PYTHON}" src/02_relax_geometry.py \\
+            --xyz data/2H2Pc_C60.xyz --basis 6-31g --xc pbe-d3bj \\
+            --grid-level 0 --maxsteps "${MAXSTEPS:-20}" \\
+            --threads "${SLURM_CPUS_PER_TASK}" --memory-mb 95000 \\
+            --outdir output_relax
+          '''.replace('          ', ''))
+
+          Path('src/README.md').write_text('''# Source code
+
+          The numbered programs follow the calculation in execution order.
+
+          | Program | Role |
+          |---|---|
+          | `00_validate_geometry.py` | Validate atom count, composition, and fragment ordering |
+          | `01_frontier_analysis.py` | Static frontier orbitals and donor-LUMO projection |
+          | `02_relax_geometry.py` | Initial PySCF/geomeTRIC relaxation |
+          | `03_prepare_replicas.py` | Recreate the ten tracked production starts from a thermalization trajectory |
+          | `04_run_aimd.py` | PySCF Born-Oppenheimer AIMD |
+          | `05_extract_electronic.py` | Ten-state orbital energies, coefficients, projectors, and initial state |
+          | `06_track_states.py` | Orbital assignment, phase tracking, and matrix-log derivative couplings |
+          | `07_run_fssh.py` | Libra CPA-FSSH propagation |
+          | `08_analyze_fssh.py` | FSSH ensemble aggregation |
+          | `09_build_reduced_model.py` | Construct and validate the 4D+3A Hamiltonian |
+          | `10_plot_libra_experiment.py` | Libra estimator and experiment figures |
+          | `11_compare_fssh_variants.py` | Plain/Boltzmann detailed-balance sensitivity |
+          | `12_analyze_coherent_mechanism.py` | Coherent dynamics, coherence, and pathway currents |
+
+          Portable submission templates are under `src/slurm/`. Comments are kept close to the equations or implementation choices they clarify; long tutorial-style commentary is intentionally avoided.
+          '''.replace('          ', ''))
+
+          Path('data/README.md').write_text('''# Input data
+
+          - `2H2Pc_C60.xyz`: published 176-atom donor-acceptor geometry.
+          - `fragments.json`: atom ranges used for donor and C60 projectors.
+          - `production_starts/`: exact ten starting structures used in production; `manifest.csv` records their source frames.
+          - `experiment_shg_digitized.csv`: approximate digitization of the published SHG trace, not original raw experimental data.
+          ''')
+
+          readme = Path('README.md')
+          text = readme.read_text()
+          text = re.sub(
+              r'\| `01_geometry/`.*?\| `report/` \| Capstone report in TeX and PDF \|',
+              '| `data/` | Geometry, fragment map, production starts, and digitized experiment |\n'
+              '| `src/` | All Python and Slurm source code in execution order |\n'
+              '| `docs/` | Method, reproducibility, and interpretation |\n'
+              '| `results/` | Final compact numerical outputs and original figures |\n'
+              '| `report/` | Capstone report in TeX and PDF |',
+              text,
+              flags=re.S,
+          )
+          text = text.replace('python src/08_analyze_fssh.py --root output_libra/fssh --ntraj 10',
+                              'python src/08_analyze_fssh.py --root output_libra/fssh --ntraj 10')
+          readme.write_text(text)
+
+          repro = Path('docs/REPRODUCIBILITY.md')
+          text = repro.read_text()
+          text = text.replace(
+              'The validation checks the published 176-atom geometry and compiles every retained Python source.',
+              'The validation checks the published 176-atom geometry and compiles every program under `src/`.'
+          )
+          text = text.replace(
+              'The exact starting geometries are under `data/production_starts/`; their source frames are listed in `manifest.csv`.',
+              'The exact starting geometries are under `data/production_starts/`; their source frames are listed in `manifest.csv`. `src/03_prepare_replicas.py` reproduces this extraction from the thermalization trajectory.'
+          )
+          repro.write_text(text)
+
+          Path('Makefile').write_text('''.PHONY: check report
+
+          check:
+          \tpython src/00_validate_geometry.py
+          \tpython -m compileall -q src
+
+          report:
+          \tcd report && latexmk -pdf -interaction=nonstopmode -halt-on-error Project_Report.tex
+          '''.replace('          ', ''))
+
+          quality = Path('.github/workflows/quality.yml')
+          text = quality.read_text()
+          text = text.replace('python 01_geometry/validate_geometry.py', 'python src/00_validate_geometry.py')
+          text = text.replace('python -m compileall -q 01_geometry 03_aimd/scripts', 'python -m compileall -q src')
+          quality.write_text(text)
+          PY
+
+          chmod +x src/*.py src/slurm/*.slurm
+          rm .github/workflows/reorganize-source.yml
+
+      - name: Validate final source tree
+        run: |
+          python src/00_validate_geometry.py
+          python -m compileall -q src
+          test ! -e 01_geometry
+          test ! -e 03_aimd
+          grep -R "03_aimd/scripts\|01_geometry/\|scripts/0[1-9]_" README.md docs src .github/workflows Makefile && exit 1 || true
+
+      - name: Commit final layout
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Consolidate reproducible workflow under src and data"
+          git push origin submission-ready
