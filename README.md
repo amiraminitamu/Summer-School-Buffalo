@@ -1,38 +1,17 @@
-# First-principles charge-transfer dynamics in 2H2Pc/C60
-
-[![Repository checks](https://github.com/amiraminitamu/Summer-School-Buffalo/actions/workflows/quality.yml/badge.svg?branch=submission-ready)](https://github.com/amiraminitamu/Summer-School-Buffalo/actions/workflows/quality.yml)
+# ab-initio charge-transfer dynamics in 2H2Pc/C60
 
 **Amirhosein (Amir) Amini**  
 Department of Chemistry, Texas A&M University  
 Advisor: Prof. Arkajit Mandal  
 CyberTraining Summer School 2026
 
-This README is the primary scientific narrative for the project. It contains the motivation, computational method, numerical checks, result interpretation, limitations, and complete reproduction path. The compiled report under `report/` is supplementary rather than required for understanding the work.
+## Main Structure of The Project
 
-> **Scope:** This repository is exclusively a theoretical charge-transport study. It contains no cybersecurity analysis and no biological modeling.
-
-## Abstract
-
-In this work, we develop a first-principles workflow for early-time photoinduced charge-transfer dynamics in a 176-atom free-base phthalocyanine dimer–fullerene complex, `2H2Pc/C60`. The reference system was introduced by Yamijala and Huo, who modeled the dynamics with a DFTB-based nonadiabatic Hamiltonian. Here, the molecular trajectories and electronic Hamiltonians are instead generated with PySCF.
+In this work, I develop an ab-initio workflow for early-time photoinduced charge-transfer dynamics in a 176-atom free-base phthalocyanine dimer–fullerene complex, `2H2Pc/C60`. The reference system was introduced by Yamijala and Huo, who modeled the dynamics with a DFTB-based nonadiabatic Hamiltonian. Here, the molecular trajectories and electronic Hamiltonians are instead generated with PySCF.
 
 Ten independent 100 fs Born–Oppenheimer molecular-dynamics trajectories are used to sample nuclear motion at 300 K. At every 0.5 fs frame, we calculate the first ten unoccupied Kohn–Sham orbitals, construct a C60 fragment projector, track the active orbital manifold across geometries, and obtain orbital time-derivative couplings from the matrix logarithm of the closest-unitary overlap. The resulting trajectory-dependent ten-state Hamiltonians are propagated in two ways: numerically exact matrix-exponential propagation within the finite active space and classical-path fewest-switches surface hopping with Libra.
 
 An independently constructed four-donor plus three-acceptor (`4D+3A`) Hamiltonian reproduces the full coherent ensemble with an RMSE of `0.01830`. Plain classical-path FSSH underestimates the digitized experimental transfer, while a Boltzmann-rescaled uphill-hop prescription overestimates it. The donor–acceptor density matrix retains substantial coherence, and pair-resolved probability currents reveal strong recrossing: the most dynamically active donor–acceptor pair is not the largest source of net acceptor accumulation. The principal uncertainty is therefore physical-model sensitivity—especially the electronic Hamiltonian, prescribed nuclear paths, and detailed-balance treatment—rather than numerical instability in orbital tracking or propagation.
-
-## Scientific question
-
-Photoinduced charge transfer is often pictured as population moving once from one donor state to one acceptor state. That two-state picture is not adequate for `2H2Pc/C60` because:
-
-- the two phthalocyanines and C60 contribute several nearby frontier orbitals;
-- nuclear motion rotates and mixes near-degenerate orbitals from frame to frame;
-- the measured quantity is a fragment charge, not the population of a single adiabatic orbital;
-- coherent exchange and repeated donor–acceptor recrossing can occur before net population accumulates.
-
-The central question is therefore:
-
-> **How do coherent dynamics, stochastic surface hopping, detailed balance, and active-space reduction control the predicted early-time C60 charge population?**
-
-The goal is not to fit the experimental trace. Every transformation from molecular coordinates to the final fragment population is defined independently and accompanied by numerical diagnostics.
 
 ## System
 
@@ -46,7 +25,7 @@ The neutral complex contains:
 | Donor fragment | atoms `1–116`, two H2Pc molecules |
 | Acceptor fragment | atoms `117–176`, C60 |
 
-The published starting structure is stored in `data/2H2Pc_C60.xyz`, and the fragment definition is stored in `data/fragments.json`. The initial frontier-orbital analysis and PySCF/geomeTRIC relaxation code are retained under `src/`. The exact coordinates used to launch the ten production trajectories are stored under `data/production_starts/`, so the production ensemble can be reproduced without reconstructing an earlier thermalization run.
+The published starting structure is stored in `data/2H2Pc_C60.xyz`, and the fragment definition is stored in `data/fragments.json`. The initial frontier-orbital analysis and PySCF/geomeTRIC relaxation code are retained under `src/`. The exact coordinates used to launch the ten production trajectories are stored under `data/production_starts/`, so the production ensemble can be reproduced without the need to run a thermalization run.
 
 ## Computational workflow
 
@@ -140,7 +119,7 @@ O_{ij}^{(n)}=
 
 The tracking procedure is:
 
-1. use a Hungarian assignment to maximize the total absolute orbital overlap;
+1. use the Hungarian algorithm to maximize the total absolute orbital overlap;
 2. correct orbital signs so matched diagonal overlaps are positive;
 3. calculate the closest-unitary polar factor `U` of the tracked overlap;
 4. obtain the midpoint orbital derivative-coupling matrix from the matrix logarithm.
@@ -154,7 +133,7 @@ If `O = L Sigma R†`, the closest unitary matrix is `U = L R†`, and
 =\mathbf{E}_{n+1/2}-i\mathbf{D}_{n+1/2}.
 ```
 
-These are **Kohn–Sham orbital time-derivative couplings**. No TDDFT excited-state calculation is performed.
+I should note that these are **Kohn–Sham orbital time-derivative couplings**.
 
 ### 5. Coherent propagation
 
@@ -165,13 +144,13 @@ For each piecewise-constant midpoint Hamiltonian, the electronic coefficients ar
 \exp[-i\mathbf{H}_{\mathrm{vib}}\Delta t]\mathbf{c}(t).
 ```
 
-The matrix exponential is numerically exact for each interval within the specified finite ten-state Hamiltonian. “Exact coherent dynamics” in this repository does **not** mean exact many-electron molecular dynamics.
+The matrix exponential is numerically exact for each interval within the specified finite ten-state Hamiltonian. Therefore, “Exact coherent dynamics” does **not** mean exact many-electron molecular dynamics.
 
 ### 6. Libra classical-path FSSH
 
 Libra evaluates fewest-switches hopping probabilities while the PySCF nuclear trajectory remains fixed. For each of the ten nuclear paths, `20,000` stochastic surface histories are propagated with `200` electronic substeps per 0.5 fs nuclear interval.
 
-Two hopping prescriptions are compared:
+Two hopping methods are compared:
 
 - **Plain CPA-FSSH:** the unmodified classical-path hopping probabilities;
 - **Boltzmann-rescaled CPA-FSSH:** uphill hops from state `i` to state `j` are multiplied by
@@ -190,7 +169,7 @@ The ten-state active space contains four donor-like and six acceptor-like direct
 - the complete four-state donor subspace;
 - the three lowest-energy C60 states.
 
-Both fragment subspaces are parallel transported between frames, and a new seven-state Hamiltonian is constructed independently using the same overlap, polar-decomposition, and matrix-log procedure. It is not produced by merely plotting seven components of the full ten-state wavefunction.
+Both fragment subspaces are parallel transported between frames, and a new seven-state Hamiltonian is constructed independently using the same overlap, polar-decomposition, and matrix-log procedure.
 
 The reduced model is tested against the full coherent propagation over every trajectory and every time point. Its purpose is to determine whether a compact mechanistic Hamiltonian preserves the observable of interest before using it for pathway analysis.
 
