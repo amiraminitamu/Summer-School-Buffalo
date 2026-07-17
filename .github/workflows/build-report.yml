@@ -7,7 +7,6 @@ on:
     paths:
       - "report/Project_Report.tex"
       - "results/figures/**"
-      - ".github/report-figures.patch"
       - ".github/workflows/build-report.yml"
   workflow_dispatch:
 
@@ -24,14 +23,8 @@ jobs:
           ref: submission-ready
           fetch-depth: 0
 
-      - name: Install original analysis figures in report source
-        run: |
-          set -euo pipefail
-          if [ -f .github/report-figures.patch ]; then
-            patch -p3 < .github/report-figures.patch
-            rm .github/report-figures.patch
-            rm -f .github/workflows/apply-report-figures.yml
-          fi
+      - name: Polish report source
+        run: sed -i 's/indepently/independently/g' report/Project_Report.tex
 
       - name: Install LaTeX
         run: |
@@ -42,14 +35,14 @@ jobs:
         working-directory: report
         run: latexmk -pdf -interaction=nonstopmode -halt-on-error Project_Report.tex
 
-      - name: Commit revised source and compiled PDF
+      - name: Commit source and compiled PDF
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
+          git add report/Project_Report.tex report/Project_Report.pdf
           if git diff --cached --quiet; then
             echo "Report source and PDF are current."
           else
-            git commit -m "Feature original coherent and Libra figures in report"
+            git commit -m "Polish and rebuild figure-rich capstone report"
             git push origin submission-ready
           fi
