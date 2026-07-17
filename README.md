@@ -1,85 +1,383 @@
 # First-principles charge-transfer dynamics in 2H2Pc/C60
 
 [![Repository checks](https://github.com/amiraminitamu/Summer-School-Buffalo/actions/workflows/quality.yml/badge.svg?branch=submission-ready)](https://github.com/amiraminitamu/Summer-School-Buffalo/actions/workflows/quality.yml)
-[![Build report](https://github.com/amiraminitamu/Summer-School-Buffalo/actions/workflows/build-report.yml/badge.svg?branch=submission-ready)](https://github.com/amiraminitamu/Summer-School-Buffalo/actions/workflows/build-report.yml)
 
-A reproducible theoretical-chemistry workflow for photoinduced charge transfer from a free-base phthalocyanine dimer donor (`2H2Pc`) to a fullerene acceptor (`C60`). It combines PySCF molecular dynamics and electronic structure, cross-geometry orbital tracking, exact unitary propagation in a finite active space, Libra classical-path fewest-switches surface hopping, and a fragment-adapted reduced Hamiltonian with pathway-resolved probability currents.
+**Amirhosein (Amir) Amini**  
+Department of Chemistry, Texas A&M University  
+Advisor: Prof. Arkajit Mandal  
+CyberTraining Summer School 2026
 
-> **Scope:** this is exclusively a theoretical charge-transport study. It contains no cybersecurity analysis and no biological modeling.
+This README is the primary scientific narrative for the project. It contains the motivation, computational method, numerical checks, result interpretation, limitations, and complete reproduction path. The compiled report under `report/` is supplementary rather than required for understanding the work.
+
+> **Scope:** This repository is exclusively a theoretical charge-transport study. It contains no cybersecurity analysis and no biological modeling.
+
+## Abstract
+
+In this work, we develop a first-principles workflow for early-time photoinduced charge-transfer dynamics in a 176-atom free-base phthalocyanine dimer–fullerene complex, `2H2Pc/C60`. The reference system was introduced by Yamijala and Huo, who modeled the dynamics with a DFTB-based nonadiabatic Hamiltonian. Here, the molecular trajectories and electronic Hamiltonians are instead generated with PySCF.
+
+Ten independent 100 fs Born–Oppenheimer molecular-dynamics trajectories are used to sample nuclear motion at 300 K. At every 0.5 fs frame, we calculate the first ten unoccupied Kohn–Sham orbitals, construct a C60 fragment projector, track the active orbital manifold across geometries, and obtain orbital time-derivative couplings from the matrix logarithm of the closest-unitary overlap. The resulting trajectory-dependent ten-state Hamiltonians are propagated in two ways: numerically exact matrix-exponential propagation within the finite active space and classical-path fewest-switches surface hopping with Libra.
+
+An independently constructed four-donor plus three-acceptor (`4D+3A`) Hamiltonian reproduces the full coherent ensemble with an RMSE of `0.01830`. Plain classical-path FSSH underestimates the digitized experimental transfer, while a Boltzmann-rescaled uphill-hop prescription overestimates it. The donor–acceptor density matrix retains substantial coherence, and pair-resolved probability currents reveal strong recrossing: the most dynamically active donor–acceptor pair is not the largest source of net acceptor accumulation. The principal uncertainty is therefore physical-model sensitivity—especially the electronic Hamiltonian, prescribed nuclear paths, and detailed-balance treatment—rather than numerical instability in orbital tracking or propagation.
 
 ## Scientific question
 
-How do coherent electronic dynamics, stochastic surface hopping, detailed balance, and active-space reduction affect the predicted early-time C60 charge population in the 176-atom `2H2Pc/C60` complex?
+Photoinduced charge transfer is often pictured as population moving once from one donor state to one acceptor state. That two-state picture is not adequate for `2H2Pc/C60` because:
+
+- the two phthalocyanines and C60 contribute several nearby frontier orbitals;
+- nuclear motion rotates and mixes near-degenerate orbitals from frame to frame;
+- the measured quantity is a fragment charge, not the population of a single adiabatic orbital;
+- coherent exchange and repeated donor–acceptor recrossing can occur before net population accumulates.
+
+The central question is therefore:
+
+> **How do coherent dynamics, stochastic surface hopping, detailed balance, and active-space reduction control the predicted early-time C60 charge population?**
+
+The goal is not to fit the experimental trace. Every transformation from molecular coordinates to the final fragment population is defined independently and accompanied by numerical diagnostics.
+
+## System
+
+The neutral complex contains:
+
+| Property | Value |
+|---|---:|
+| Molecular formula | `C124H36N16` |
+| Total atoms | `176` |
+| Total electrons | `892` |
+| Donor fragment | atoms `1–116`, two H2Pc molecules |
+| Acceptor fragment | atoms `117–176`, C60 |
+
+The published starting structure is stored in `data/2H2Pc_C60.xyz`, and the fragment definition is stored in `data/fragments.json`. The initial frontier-orbital analysis and PySCF/geomeTRIC relaxation code are retained under `src/`. The exact coordinates used to launch the ten production trajectories are stored under `data/production_starts/`, so the production ensemble can be reproduced without reconstructing an earlier thermalization run.
+
+## Computational workflow
 
 ```text
-10 x 100 fs PySCF AIMD trajectories
+published 2H2Pc/C60 geometry
         |
         v
-KS orbitals + C60 projectors at 2,000 snapshots
+geometry validation + frontier-orbital analysis + PySCF relaxation
         |
         v
-orbital tracking + matrix-log derivative couplings
-        |
-        +----------------------+
-        |                      |
-        v                      v
-exact 10-state unitary      Libra CPA-FSSH
-propagation                 plain / Boltzmann
+10 independent 100 fs PySCF AIMD trajectories at 300 K
         |
         v
-validated 4 donor + 3 acceptor Hamiltonian
+2,000 electronic snapshots: energies, orbitals, and C60 projectors
         |
         v
-coherence and donor-to-acceptor probability currents
+cross-geometry assignment + phase correction + polar decomposition
+        |
+        v
+matrix-log orbital derivative couplings and 10-state H_vib(t)
+        |
+        +-------------------------------+
+        |                               |
+        v                               v
+exact finite-space coherent         Libra CPA-FSSH
+propagation                         plain / Boltzmann
+        |
+        v
+independent 4D+3A reduced Hamiltonian
+        |
+        v
+coherence and donor-to-acceptor probability-current analysis
 ```
 
-## Main findings
+## Methods
 
-| Result | Value |
+### 1. Geometry preparation and AIMD
+
+The published geometry is first checked for atom count, composition, and fragment ordering. The retained preparation scripts perform a static frontier-orbital calculation and a PySCF/geomeTRIC relaxation before molecular dynamics.
+
+The production nuclear trajectories use:
+
+| Setting | Value |
 |---|---:|
-| Minimum consecutive-overlap singular value | `0.999580` |
-| Full 10-state coherent C60 population at 99.5 fs | `0.2798 +/- 0.0963` |
-| Reduced 4D+3A C60 population at 99.5 fs | `0.2462 +/- 0.0882` |
-| Full-versus-reduced ensemble RMSE | `0.01830` |
-| Plain CPA-FSSH endpoint | `0.28085` |
-| Boltzmann-rescaled CPA-FSSH endpoint | `0.89890` |
-| Digitized experimental endpoint | `0.60857` |
-| Maximum mean donor-acceptor coherence | `0.4262` at `77.5 fs` |
-| Dominant positive-flux channel | `D2 -> A1` (`0.2739`) |
+| Electronic structure | PBE-D3(BJ)/6-31G |
+| Integral treatment | density fitting |
+| Temperature | `300 K` |
+| Thermostat | Berendsen |
+| Nuclear time step | `0.5 fs` |
+| Frames per trajectory | `200` |
+| Nominal trajectory length | `100 fs` |
+| Independent trajectories | `10` |
+| Total electronic snapshots | `2,000` |
 
-The experiment lies between the plain and Boltzmann-rescaled surface-hopping predictions. The reduced model closely follows the full coherent ensemble, while the channel analysis shows strong recrossing rather than simple one-way transfer.
+These are ground-state Born–Oppenheimer trajectories. They provide prescribed fluctuating nuclear paths for the subsequent electronic dynamics; the propagated electronic state does not exert back-reaction on the nuclei.
 
-## Key figures
+### 2. Electronic active space and initial state
 
-### Detailed-balance sensitivity
+At each geometry, the electronic active space consists of the first ten unoccupied Kohn–Sham orbitals. For the snapshot electronic calculations, the D3 correction is omitted because it changes the nuclear potential and forces but not the Kohn–Sham orbital coefficients used in the electronic propagation.
 
-![Plain and Boltzmann-rescaled CPA-FSSH compared with experiment](results/figures/libra/fig_plain_boltzmann_experiment.png)
+The initial electronic state is the isolated donor-dimer LUMO projected into the full-complex active space. If `phi_D` is the isolated donor LUMO and `psi_i` are the ten active complex orbitals,
 
-### Full versus reduced coherent dynamics
+```math
+b_i = \langle \psi_i | \phi_D \rangle,
+\qquad
+c_i(0)=\frac{b_i}{\sqrt{\sum_j |b_j|^2}}.
+```
 
-![Full ten-state and reduced 4D+3A propagation](results/figures/coherent/coherent_full_vs_reduced.png)
+This avoids initializing the dynamics in whichever adiabatic orbital happens to carry the largest donor weight at one geometry. Instead, the initial wavefunction is tied to a physically defined donor-localized orbital.
 
-### Pathway-resolved transfer
+### 3. C60 fragment population
 
-![Integrated positive probability flux](results/figures/coherent/dominant_transfer_channels.png)
+A symmetrized Mulliken projector is constructed for the C60 atomic-orbital block and transformed into the ten-state active basis. The coherent C60 population is
 
-### Donor-acceptor coherence
+```math
+P_{\mathrm{C60}}(t)=\mathbf{c}^{\dagger}(t)
+\mathbf{P}_{\mathrm{C60}}(t)\mathbf{c}(t).
+```
 
-![Mean donor-acceptor coherence](results/figures/coherent/donor_acceptor_coherence.png)
+Because the fragment projector contains off-diagonal elements, this observable includes interference between active orbitals. A simple sum of adiabatic-state populations weighted by diagonal C60 character would generally omit that coherence contribution.
+
+### 4. Orbital tracking and derivative couplings
+
+Directly sorting orbitals by energy is unreliable near avoided crossings and within nearly degenerate C60 manifolds. For adjacent geometries, we therefore compute the cross-geometry overlap
+
+```math
+O_{ij}^{(n)}=
+\left\langle\psi_i(\mathbf{R}_n)\middle|
+\psi_j(\mathbf{R}_{n+1})\right\rangle.
+```
+
+The tracking procedure is:
+
+1. use a Hungarian assignment to maximize the total absolute orbital overlap;
+2. correct orbital signs so matched diagonal overlaps are positive;
+3. calculate the closest-unitary polar factor `U` of the tracked overlap;
+4. obtain the midpoint orbital derivative-coupling matrix from the matrix logarithm.
+
+If `O = L Sigma R†`, the closest unitary matrix is `U = L R†`, and
+
+```math
+\mathbf{D}_{n+1/2}=\frac{1}{\Delta t}\log\mathbf{U}_n,
+\qquad
+\mathbf{H}_{\mathrm{vib},n+1/2}
+=\mathbf{E}_{n+1/2}-i\mathbf{D}_{n+1/2}.
+```
+
+These are **Kohn–Sham orbital time-derivative couplings**. No TDDFT excited-state calculation is performed.
+
+### 5. Coherent propagation
+
+For each piecewise-constant midpoint Hamiltonian, the electronic coefficients are propagated as
+
+```math
+\mathbf{c}(t+\Delta t)=
+\exp[-i\mathbf{H}_{\mathrm{vib}}\Delta t]\mathbf{c}(t).
+```
+
+The matrix exponential is numerically exact for each interval within the specified finite ten-state Hamiltonian. “Exact coherent dynamics” in this repository does **not** mean exact many-electron molecular dynamics.
+
+### 6. Libra classical-path FSSH
+
+Libra evaluates fewest-switches hopping probabilities while the PySCF nuclear trajectory remains fixed. For each of the ten nuclear paths, `20,000` stochastic surface histories are propagated with `200` electronic substeps per 0.5 fs nuclear interval.
+
+Two hopping prescriptions are compared:
+
+- **Plain CPA-FSSH:** the unmodified classical-path hopping probabilities;
+- **Boltzmann-rescaled CPA-FSSH:** uphill hops from state `i` to state `j` are multiplied by
+
+```math
+\exp\left[-\frac{E_j-E_i}{k_{\mathrm B}T}\right],
+\qquad E_j>E_i.
+```
+
+The coherent amplitudes and Hamiltonians are identical in these two calculations. Only the stochastic active-surface histories change. This makes the comparison a direct test of detailed-balance sensitivity rather than a comparison of two unrelated electronic models.
+
+### 7. Fragment-adapted reduced Hamiltonian
+
+The ten-state active space contains four donor-like and six acceptor-like directions. The reduced model retains:
+
+- the complete four-state donor subspace;
+- the three lowest-energy C60 states.
+
+Both fragment subspaces are parallel transported between frames, and a new seven-state Hamiltonian is constructed independently using the same overlap, polar-decomposition, and matrix-log procedure. It is not produced by merely plotting seven components of the full ten-state wavefunction.
+
+The reduced model is tested against the full coherent propagation over every trajectory and every time point. Its purpose is to determine whether a compact mechanistic Hamiltonian preserves the observable of interest before using it for pathway analysis.
+
+### 8. Coherence and probability currents
+
+For donor state `d` and acceptor state `a`, the instantaneous coherent probability current is
+
+```math
+J_{d\rightarrow a}(t)=
+2\,\mathrm{Im}\left[
+H_{ad}(t)c_d(t)c_a^*(t)
+\right].
+```
+
+Three integrated quantities are used:
+
+- the **signed integral**, which measures net population transferred through the pair;
+- the **positive integral**, which measures total forward activity;
+- the **absolute integral**, which measures total bidirectional exchange.
+
+A channel can therefore be highly active while contributing little net charge transfer if the population repeatedly moves forward and backward.
+
+## Results and interpretation
+
+### Summary
+
+| Result | Value | Interpretation |
+|---|---:|---|
+| Minimum consecutive-overlap singular value | `0.999580` | The ten-state active subspace remains continuous across all adjacent geometries. |
+| Full coherent C60 population at 99.5 fs | `0.2798 ± 0.0963` | Baseline coherent prediction; uncertainty is the 95% confidence interval across ten nuclear paths. |
+| Reduced 4D+3A C60 population at 99.5 fs | `0.2462 ± 0.0882` | Compact model gives nearly the same ensemble behavior. |
+| Full-versus-reduced ensemble RMSE | `0.01830` | Reduction error is small over the complete time window, not only at the endpoint. |
+| Plain CPA-FSSH endpoint | `0.28085` | Substantially below the digitized experiment. |
+| Plain CPA-FSSH full-window RMSE | `0.19221` | Plain hopping under-transfers over most of the simulated interval. |
+| Boltzmann-rescaled endpoint | `0.89890` | Substantially above the digitized experiment. |
+| Boltzmann full-window RMSE | `0.30455` | Strong suppression of uphill return overcorrects the kinetics. |
+| Digitized experimental endpoint | `0.60857` | Approximate value read from the published SHG figure; not original raw data. |
+| Maximum mean donor–acceptor coherence | `0.42616` at `77.5 fs` | Donor and acceptor subspaces remain substantially coherently mixed. |
+| Most active positive-flux pair | `D2 -> A1`, `0.27390` | Largest forward activity, but not largest net accumulation because of recrossing. |
+| Current-continuity RMSE | `6.25 × 10^-5 fs^-1` | Sum of pair currents reproduces the derivative of the acceptor population. |
+
+### 1. Orbital tracking is numerically stable
+
+Across all `2,000` electronic snapshots, the minimum singular value of the consecutive ten-state overlap matrices is `0.999580`. A singular value close to one means that the active space at one frame almost completely spans the same physical orbital manifold at the next frame.
+
+This is important because individual near-degenerate C60 orbitals can rotate substantially or exchange energy order. The high singular values show that those rotations occur **within** a continuous ten-state subspace. Consequently, the final disagreement with experiment cannot reasonably be attributed to the active manifold disappearing or to catastrophic state-tracking failure.
+
+This diagnostic establishes numerical continuity, not physical exactness. It does not prove that ten Kohn–Sham virtual orbitals are a complete many-electron excited-state description.
+
+### 2. The 4D+3A model preserves the coherent observable
+
+At `99.5 fs`, the full ten-state coherent ensemble gives
+
+```math
+P_{\mathrm{C60}}^{10\mathrm{s}}=0.2798\pm0.0963,
+```
+
+while the independently constructed reduced model gives
+
+```math
+P_{\mathrm{C60}}^{4D+3A}=0.2462\pm0.0882.
+```
+
+The uncertainties are 95% confidence intervals across the ten independent nuclear trajectories. The ensemble-curve RMSE is `0.018301`, and the mean trajectory-level RMSE is `0.025094`. The maximum difference between the full fragment-projector population and the simpler retained-acceptor-subspace population is `0.006402`.
+
+![Full ten-state coherent propagation, the independently constructed 4D+3A propagation, and the digitized experimental curve](results/figures/coherent/coherent_full_vs_reduced.png)
+
+**Interpretation.** The seven-state model reproduces the time-dependent observable throughout the full 99.5 fs interval, not merely at the final time. This supports the use of the `4D+3A` Hamiltonian as a compact mechanistic model. The small but systematic reduction error also shows why validation is necessary: selecting states by donor or acceptor character alone is not automatically guaranteed to preserve coherent interference.
+
+The experimental curve lies well above both coherent calculations. Since the reduced and full calculations agree closely, this discrepancy is not caused by the active-space reduction.
+
+### 3. The experiment lies between two FSSH detailed-balance limits
+
+The approximate digitized experimental endpoint is `0.608567`. Plain CPA-FSSH gives `0.280850`, with a full-window RMSE of `0.192214`. Boltzmann-rescaled CPA-FSSH gives `0.898903`, with an RMSE of `0.304553`.
+
+![Plain and Boltzmann-rescaled CPA-FSSH compared with the digitized experimental curve](results/figures/libra/fig_plain_boltzmann_experiment.png)
+
+**Interpretation.** In the plain calculation, uphill return from lower C60-like states remains comparatively accessible, so acceptor population does not accumulate rapidly enough. Multiplying thermally uphill hops by a Boltzmann factor strongly suppresses that return and drives excessive acceptor accumulation. The experimental curve lies between these limits.
+
+The Boltzmann prescription is therefore not a universal “correction” that automatically improves FSSH. In this system, it changes the answer more than the statistical uncertainty across nuclear trajectories and even changes the direction of the error relative to experiment. The detailed-balance rule is one of the dominant physical-model choices in the calculation.
+
+No empirical scaling was applied to force either theoretical curve toward the experimental one.
+
+### 4. Charge transfer retains substantial donor–acceptor coherence
+
+The mean Frobenius norm of the donor–acceptor density-matrix block reaches `0.426162` at `77.5 fs`.
+
+![Mean donor–acceptor coherence across the ten nuclear trajectories](results/figures/coherent/donor_acceptor_coherence.png)
+
+**Interpretation.** The donor and acceptor subspaces are not behaving as two classical boxes connected only by irreversible hops. Their amplitudes remain coherently mixed over a significant portion of the simulation. This does not imply that environmental decoherence is absent in the real experiment; rather, it shows that the present finite-space Hamiltonian naturally generates coherent exchange and that a purely population-only interpretation discards relevant information.
+
+### 5. The most active channel is dominated by recrossing
+
+The largest positive integrated flux is the `D2 -> A1` channel:
+
+| Flux measure for `D2 -> A1` | Value |
+|---|---:|
+| Positive integral | `0.273903` |
+| Signed integral | `0.029675` |
+| Absolute integral | `0.518130` |
+
+![Integrated positive probability flux for all donor–acceptor pairs](results/figures/coherent/dominant_transfer_channels.png)
+
+The positive integral is large because substantial population moves from `D2` toward `A1`. The absolute integral is even larger because it counts both forward and backward exchange. The much smaller signed integral shows that most of this activity is canceled by recrossing.
+
+The largest net-forward channels are:
+
+| Channel | Signed integrated flux |
+|---|---:|
+| `D1 -> A3` | `0.072861` |
+| `D1 -> A2` | `0.053819` |
+| `D3 -> A2` | `0.049790` |
+| `D2 -> A3` | `0.041704` |
+
+By contrast, `D2 -> A2` has a signed integral of `-0.036544`, indicating net backflow through that pair.
+
+**Interpretation.** “Dominant pathway” depends on the quantity being ranked. `D2 -> A1` is the most dynamically active exchange channel, but `D1 -> A3` contributes more net forward accumulation. A mechanism inferred only from instantaneous couplings, maximum populations, or positive flux would miss this distinction.
+
+Summing all twelve pair currents reproduces the time derivative of the acceptor population with a mean RMSE of `6.25 × 10^-5 fs^-1`, providing an internal continuity check on the pathway decomposition. The complete signed, positive, and absolute current table is stored in `results/donor_acceptor_channel_flux.csv`.
+
+## Overall conclusions
+
+1. **The active orbital manifold is numerically well tracked.** The minimum consecutive-overlap singular value of `0.999580` rules out severe subspace discontinuities as the source of the observed model disagreement.
+
+2. **A compact fragment-adapted Hamiltonian is sufficient for the coherent observable.** The independently propagated `4D+3A` model reproduces the ten-state ensemble with an RMSE of `0.01830`.
+
+3. **Charge transfer is multichannel and strongly recrossing.** The channel with the greatest total forward activity is not the channel with the greatest net transfer.
+
+4. **Coherence remains important in the present Hamiltonian.** The donor–acceptor coherence reaches `0.42616`, so the dynamics cannot be fully summarized as a sequence of irreversible population hops.
+
+5. **Detailed balance controls the FSSH prediction.** Plain CPA-FSSH underestimates transfer, whereas Boltzmann-rescaled uphill hops overestimate it. The experiment lies between these treatments.
+
+6. **The remaining disagreement with experiment is physical rather than obviously numerical.** The most important approximations are the use of ground-state Kohn–Sham virtual orbitals, prescribed thermostatted nuclear paths, lack of electronic back-reaction and explicit decoherence, and the choice of surface-hopping detailed-balance rule.
+
+The central scientific result is therefore not that one of the two FSSH variants perfectly reproduces experiment. It is that the predicted transfer kinetics are highly sensitive to physically meaningful modeling choices, while the state tracking, finite-space propagation, reduced-model construction, and current decomposition are internally consistent.
+
+## Limitations
+
+The interpretation above should be read with the following boundaries:
+
+- **Kohn–Sham virtual orbitals are not many-electron excited states.** The ten-state model is an orbital Hamiltonian, not a TDDFT, CASSCF, or equation-of-motion excited-state calculation.
+- **The nuclei are prescribed.** Electronic transitions do not change forces, momenta, or subsequent nuclear motion.
+- **The trajectories are ground-state and thermostatted.** They approximate a fluctuating environment but do not reproduce a photoexcited-state nuclear ensemble.
+- **No explicit decoherence correction is applied to the coherent amplitudes.** The coherence analysis characterizes the retained Hamiltonian, not necessarily the full condensed-phase decoherence time.
+- **The FSSH nuclear path is fixed.** Momentum rescaling and frustrated-hop feedback are not defined in the usual way for this classical-path setup.
+- **The experimental trace is digitized.** `data/experiment_shg_digitized.csv` is an approximate extraction from a published figure and contains no original experimental error bars.
+- **“Exact” refers only to finite-space propagation.** Matrix exponentials solve the chosen ten- or seven-state Hamiltonian accurately; they do not remove the physical approximations used to construct that Hamiltonian.
+- **The ensemble contains ten nuclear paths.** Confidence intervals characterize trajectory-to-trajectory variation within this sample and should not be interpreted as a complete uncertainty quantification of the electronic-structure model.
 
 ## Repository layout
 
-| Path | Purpose |
+| Path | Contents |
 |---|---|
-| `data/` | Geometry, fragment map, exact production starts, and digitized experiment |
-| `src/` | All Python and Slurm source code, ordered by execution stage |
-| `docs/` | Scientific method, reproducibility, and result interpretation |
-| `results/` | Compact numerical outputs and original publication-ready figures |
-| `report/` | Capstone report in LaTeX and PDF |
+| `data/` | Published geometry, fragment map, exact production starts, and digitized experiment |
+| `src/` | All retained Python and Slurm source code in execution order |
+| `docs/` | Additional method, reproducibility, and interpretation notes |
+| `results/` | Compact machine-readable metrics, channel currents, and original figures |
+| `report/` | Supplementary LaTeX report and compiled PDF |
+| `environment-pyscf.yml` | Reproducible lightweight PySCF-side environment |
+| `Makefile` | Geometry validation and Python compilation checks |
 
-The initial frontier analysis, PySCF/geomeTRIC relaxation, production-start extraction, AIMD, electronic extraction, state tracking, Libra calculations, reduced model, and final analyses are all retained under [`src/`](src/).
+Large AIMD trajectories, checkpoint files, and the 2,000 frame-level orbital archives are intentionally not tracked because they are multi-gigabyte intermediates. The exact starting coordinates, deterministic random-seed rules, source code, and Slurm templates needed to regenerate them are retained.
 
-## Quick validation
+## Source-code inventory
+
+| Program | Purpose |
+|---|---|
+| `src/00_validate_geometry.py` | Validate formula, atom count, fragment ordering, and closest contacts |
+| `src/01_frontier_analysis.py` | Static frontier orbitals and isolated-donor-LUMO projection |
+| `src/02_relax_geometry.py` | Initial PySCF/geomeTRIC relaxation |
+| `src/03_prepare_replicas.py` | Recreate the ten production starts from a source thermalization trajectory |
+| `src/04_run_aimd.py` | PySCF Born–Oppenheimer AIMD |
+| `src/05_extract_electronic.py` | Ten-state energies, orbital coefficients, projectors, and initial state |
+| `src/06_track_states.py` | Orbital assignment, phase tracking, polar overlaps, and derivative couplings |
+| `src/07_run_fssh.py` | Libra classical-path FSSH propagation |
+| `src/08_analyze_fssh.py` | Aggregate FSSH trajectories and uncertainties |
+| `src/09_build_reduced_model.py` | Construct and validate the `4D+3A` Hamiltonian |
+| `src/10_plot_libra_experiment.py` | Generate Libra estimator and experiment-comparison figures |
+| `src/11_compare_fssh_variants.py` | Compare plain and Boltzmann-rescaled FSSH |
+| `src/12_analyze_coherent_mechanism.py` | Coherent dynamics, coherence, and pair-current analysis |
+| `src/slurm/` | Portable HPC submission templates |
+
+## Reproduction
+
+All commands below are run from the repository root.
+
+### 1. Clone and validate
 
 ```bash
 git clone https://github.com/amiraminitamu/Summer-School-Buffalo.git
@@ -91,25 +389,23 @@ conda activate pc60-pyscf
 make check
 ```
 
-## Calculation sequence
-
-All commands are run from the repository root.
-
-### 1. Initial structure and orbital checks
+### 2. Initial structure and orbital calculations
 
 ```bash
 python src/00_validate_geometry.py
 sbatch src/slurm/00_initialization.slurm
 ```
 
-The exact ten production starting structures are tracked under `data/production_starts/`. Their source frames are listed in `manifest.csv`. To repeat the extraction from the corresponding thermalization trajectory:
+The initialization launcher performs the static donor-LUMO projection and the PySCF/geomeTRIC relaxation. The exact structures used for production are already stored under `data/production_starts/`.
+
+To repeat their extraction from the corresponding thermalization trajectory:
 
 ```bash
 python src/03_prepare_replicas.py \
   --trajectory output_thermalization/aimd.md.xyz
 ```
 
-### 2. Production AIMD and electronic Hamiltonians
+### 3. Production AIMD and electronic Hamiltonians
 
 ```bash
 sbatch src/slurm/01_aimd_array.slurm
@@ -117,7 +413,7 @@ sbatch src/slurm/02_electronic_array.slurm
 sbatch src/slurm/03_tracking_array.slurm
 ```
 
-### 3. Libra CPA-FSSH
+### 4. Libra CPA-FSSH
 
 ```bash
 sbatch src/slurm/04_libra_array.slurm
@@ -126,7 +422,7 @@ BOLTZMANN=1 OUTROOT=output_libra/fssh_boltzmann \
   sbatch src/slurm/04_libra_array.slurm
 ```
 
-### 4. Analysis
+### 5. Analysis
 
 ```bash
 python src/08_analyze_fssh.py \
@@ -157,16 +453,36 @@ python src/12_analyze_coherent_mechanism.py \
   --outdir output_coherent_mechanism
 ```
 
+The PySCF and Libra calculations use separate environments. Set `PYSCF_PYTHON` and `LIBRA_PYTHON` before submitting the portable Slurm launchers, or replace those variables with the module/Conda activation commands appropriate for the target cluster.
+
+## Machine-readable results
+
+The main numerical conclusions can be inspected without rerunning the large calculations:
+
+- `results/current_results.json`: headline metrics;
+- `results/fssh_summary.csv`: plain FSSH, Boltzmann-rescaled FSSH, and experiment comparison;
+- `results/coherent_summary.json`: full and reduced coherent dynamics;
+- `results/donor_acceptor_channel_flux.csv`: signed, positive, and absolute pair currents;
+- `results/figures/`: original PDF and PNG figures produced by the analysis scripts.
+
 ## Terminology
 
-No TDDFT calculation was performed. The nonadiabatic quantities are Kohn-Sham orbital time-derivative couplings obtained from cross-geometry overlaps. “Exact coherent propagation” means numerically exact matrix-exponential propagation within the specified finite, trajectory-dependent active-space Hamiltonian; it is not exact many-electron molecular dynamics.
+- **CPA-FSSH:** classical-path approximation to fewest-switches surface hopping; the nuclear trajectory is prescribed.
+- **Active space:** the ten lowest unoccupied Kohn–Sham orbitals retained at each geometry.
+- **C60 population:** expectation value of the symmetrized Mulliken C60 fragment projector.
+- **Closest-unitary overlap:** the unitary polar factor used before taking the matrix logarithm.
+- **Exact coherent propagation:** numerically exact matrix-exponential propagation within the specified finite Hamiltonian.
+- **Positive flux:** time-integrated forward current without subtracting backflow.
+- **Signed flux:** net forward current after subtracting reverse transfer.
+- **Recrossing:** repeated forward and backward population exchange through the same channel.
 
-`data/experiment_shg_digitized.csv` is an approximate digitization of the black SHG curve in Figure 3A of Yamijala and Huo, *J. Phys. Chem. A* **2021**, 125, 628–635. It is not the original raw experimental dataset and has no original experimental error bars.
+## References
 
-## Report, citation, and license
+1. S. R. K. C. Yamijala and P. Huo, “Direct Nonadiabatic Simulations of the Photoinduced Charge Transfer Dynamics,” *J. Phys. Chem. A* **125**, 628–635 (2021), DOI: [10.1021/acs.jpca.0c10151](https://doi.org/10.1021/acs.jpca.0c10151).
+2. Q. Sun *et al.*, “PySCF: the Python-based simulations of chemistry framework,” *WIREs Comput. Mol. Sci.* **8**, e1340 (2018).
+3. A. V. Akimov, “Libra: An open-source methodology-discovery library for quantum and classical dynamics simulations,” *J. Comput. Chem.* **37**, 1626–1649 (2016).
+4. J. C. Tully, “Molecular dynamics with electronic transitions,” *J. Chem. Phys.* **93**, 1061–1071 (1990).
 
-- [Compiled report](report/Project_Report.pdf)
-- [LaTeX source](report/Project_Report.tex)
-- [Citation metadata](CITATION.cff)
+## Citation and license
 
-Source code is released under the MIT License. Published molecular coordinates and literature-derived data retain their original attribution.
+Citation metadata are provided in [`CITATION.cff`](CITATION.cff). Source code is released under the MIT License. Published molecular coordinates and literature-derived data retain their original attribution.
