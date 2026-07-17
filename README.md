@@ -217,8 +217,6 @@ Across all `2,000` electronic snapshots, the minimum singular value of the conse
 
 This is important because individual near-degenerate C60 orbitals can rotate substantially or exchange energy order. The high singular values show that those rotations occur **within** a continuous ten-state subspace. Consequently, the final disagreement with experiment cannot reasonably be attributed to the active manifold disappearing or to catastrophic state-tracking failure.
 
-This diagnostic establishes numerical continuity, not physical exactness. It does not prove that ten Kohn–Sham virtual orbitals are a complete many-electron excited-state description.
-
 ### 2. The 4D+3A model preserves the coherent observable
 
 At `99.5 fs`, the full ten-state coherent ensemble gives
@@ -250,8 +248,6 @@ The approximate digitized experimental endpoint is `0.608567`. Plain CPA-FSSH gi
 **Interpretation.** In the plain calculation, uphill return from lower C60-like states remains comparatively accessible, so acceptor population does not accumulate rapidly enough. Multiplying thermally uphill hops by a Boltzmann factor strongly suppresses that return and drives excessive acceptor accumulation. The experimental curve lies between these limits.
 
 The Boltzmann prescription is therefore not a universal “correction” that automatically improves FSSH. In this system, it changes the answer more than the statistical uncertainty across nuclear trajectories and even changes the direction of the error relative to experiment. The detailed-balance rule is one of the dominant physical-model choices in the calculation.
-
-No empirical scaling was applied to force either theoretical curve toward the experimental one.
 
 ### 4. Charge transfer retains substantial donor–acceptor coherence
 
@@ -290,34 +286,6 @@ By contrast, `D2 -> A2` has a signed integral of `-0.036544`, indicating net bac
 
 Summing all twelve pair currents reproduces the time derivative of the acceptor population with a mean RMSE of `6.25 × 10^-5 fs^-1`, providing an internal continuity check on the pathway decomposition. The complete signed, positive, and absolute current table is stored in `results/donor_acceptor_channel_flux.csv`.
 
-## Overall conclusions
-
-1. **The active orbital manifold is numerically well tracked.** The minimum consecutive-overlap singular value of `0.999580` rules out severe subspace discontinuities as the source of the observed model disagreement.
-
-2. **A compact fragment-adapted Hamiltonian is sufficient for the coherent observable.** The independently propagated `4D+3A` model reproduces the ten-state ensemble with an RMSE of `0.01830`.
-
-3. **Charge transfer is multichannel and strongly recrossing.** The channel with the greatest total forward activity is not the channel with the greatest net transfer.
-
-4. **Coherence remains important in the present Hamiltonian.** The donor–acceptor coherence reaches `0.42616`, so the dynamics cannot be fully summarized as a sequence of irreversible population hops.
-
-5. **Detailed balance controls the FSSH prediction.** Plain CPA-FSSH underestimates transfer, whereas Boltzmann-rescaled uphill hops overestimate it. The experiment lies between these treatments.
-
-6. **The remaining disagreement with experiment is physical rather than obviously numerical.** The most important approximations are the use of ground-state Kohn–Sham virtual orbitals, prescribed thermostatted nuclear paths, lack of electronic back-reaction and explicit decoherence, and the choice of surface-hopping detailed-balance rule.
-
-The central scientific result is therefore not that one of the two FSSH variants perfectly reproduces experiment. It is that the predicted transfer kinetics are highly sensitive to physically meaningful modeling choices, while the state tracking, finite-space propagation, reduced-model construction, and current decomposition are internally consistent.
-
-## Limitations
-
-The interpretation above should be read with the following boundaries:
-
-- **Kohn–Sham virtual orbitals are not many-electron excited states.** The ten-state model is an orbital Hamiltonian, not a TDDFT, CASSCF, or equation-of-motion excited-state calculation.
-- **The nuclei are prescribed.** Electronic transitions do not change forces, momenta, or subsequent nuclear motion.
-- **The trajectories are ground-state and thermostatted.** They approximate a fluctuating environment but do not reproduce a photoexcited-state nuclear ensemble.
-- **No explicit decoherence correction is applied to the coherent amplitudes.** The coherence analysis characterizes the retained Hamiltonian, not necessarily the full condensed-phase decoherence time.
-- **The FSSH nuclear path is fixed.** Momentum rescaling and frustrated-hop feedback are not defined in the usual way for this classical-path setup.
-- **The experimental trace is digitized.** `data/experiment_shg_digitized.csv` is an approximate extraction from a published figure and contains no original experimental error bars.
-- **“Exact” refers only to finite-space propagation.** Matrix exponentials solve the chosen ten- or seven-state Hamiltonian accurately; they do not remove the physical approximations used to construct that Hamiltonian.
-- **The ensemble contains ten nuclear paths.** Confidence intervals characterize trajectory-to-trajectory variation within this sample and should not be interpreted as a complete uncertainty quantification of the electronic-structure model.
 
 ## Repository layout
 
@@ -444,16 +412,6 @@ The main numerical conclusions can be inspected without rerunning the large calc
 - `results/donor_acceptor_channel_flux.csv`: signed, positive, and absolute pair currents;
 - `results/figures/`: original PDF and PNG figures produced by the analysis scripts.
 
-## Terminology
-
-- **CPA-FSSH:** classical-path approximation to fewest-switches surface hopping; the nuclear trajectory is prescribed.
-- **Active space:** the ten lowest unoccupied Kohn–Sham orbitals retained at each geometry.
-- **C60 population:** expectation value of the symmetrized Mulliken C60 fragment projector.
-- **Closest-unitary overlap:** the unitary polar factor used before taking the matrix logarithm.
-- **Exact coherent propagation:** numerically exact matrix-exponential propagation within the specified finite Hamiltonian.
-- **Positive flux:** time-integrated forward current without subtracting backflow.
-- **Signed flux:** net forward current after subtracting reverse transfer.
-- **Recrossing:** repeated forward and backward population exchange through the same channel.
 
 ## References
 
@@ -462,6 +420,3 @@ The main numerical conclusions can be inspected without rerunning the large calc
 3. A. V. Akimov, “Libra: An open-source methodology-discovery library for quantum and classical dynamics simulations,” *J. Comput. Chem.* **37**, 1626–1649 (2016).
 4. J. C. Tully, “Molecular dynamics with electronic transitions,” *J. Chem. Phys.* **93**, 1061–1071 (1990).
 
-## Citation and license
-
-Citation metadata are provided in [`CITATION.cff`](CITATION.cff). Source code is released under the MIT License. Published molecular coordinates and literature-derived data retain their original attribution.
