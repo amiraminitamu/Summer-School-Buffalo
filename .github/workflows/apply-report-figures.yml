@@ -36,3 +36,5 @@ jobs:
           git add -A
           git commit -m "Feature original coherent and Libra figures in report"
           git push origin submission-ready
+
+# Triggered after the original analysis figures were imported.
