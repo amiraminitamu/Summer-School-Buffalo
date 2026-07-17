@@ -1,0 +1,128 @@
+--- /mnt/data/final_repo/report/Project_Report.tex	2026-07-17 17:57:31.803552154 +0000
++++ /mnt/data/final_repo_v2/report/Project_Report.tex	2026-07-17 18:10:30.238167654 +0000
+@@ -16,8 +16,6 @@
+ \usepackage{caption}
+ \usepackage{tikz}
+ \usetikzlibrary{arrows.meta,positioning}
+-\usepackage{pgfplots}
+-\pgfplotsset{compat=1.18}
+ 
+ \definecolor{deepblue}{RGB}{29,68,112}
+ \definecolor{softblue}{RGB}{235,242,249}
+@@ -178,94 +176,46 @@
+ 
+ \begin{figure}[H]
+ \centering
+-\begin{tikzpicture}
+-\begin{axis}[
+-  ybar,
+-  width=0.88\textwidth,
+-  height=5.4cm,
+-  ymin=0,ymax=1.02,
+-  ylabel={$P_{\Csixty}(99.5\ \mathrm{fs})$},
+-  symbolic x coords={Coherent,Reduced,Plain,Experiment,Boltzmann},
+-  xtick=data,
+-  x tick label style={rotate=18,anchor=east},
+-  bar width=17pt,
+-  nodes near coords,
+-  nodes near coords align={vertical},
+-  grid=major
+-]
+-\addplot coordinates {
+-  (Coherent,0.279785)
+-  (Reduced,0.246209)
+-  (Plain,0.280850)
+-  (Experiment,0.608567)
+-  (Boltzmann,0.898903)
+-};
+-\end{axis}
+-\end{tikzpicture}
+-\caption{Final $\Csixty$ populations at 99.5 fs. The coherent and reduced uncertainties are reported in the text; the FSSH and experiment values are shown without inferred uncertainties.}
++\includegraphics[width=0.94\textwidth]{../results/figures/coherent/coherent_full_vs_reduced.pdf}
++\caption{Full ten-state coherent propagation, the independently constructed $4D+3A$ propagation, and the approximate digitized SHG experiment. The shaded region is the 95\% confidence interval of the full coherent ensemble across ten nuclear paths. The reduced curve follows the full active-space result throughout the simulated interval.}
++\label{fig:coherent-reduction}
+ \end{figure}
+ 
+ \subsection{Surface-hopping sensitivity}
+ The approximate digitized experimental endpoint is 0.608567. Plain CPA-FSSH gives 0.280850 with a full-window RMSE of 0.192214. Boltzmann-rescaled FSSH gives 0.898903 with an RMSE of 0.304553.
+ 
++\begin{figure}[H]
++\centering
++\includegraphics[width=0.94\textwidth]{../results/figures/libra/fig_plain_boltzmann_experiment.pdf}
++\caption{Original Libra output comparing the digitized SHG experiment with the plain and Boltzmann-rescaled CPA-FSSH ensembles. The shaded band is the 95\% confidence interval for the Boltzmann-rescaled ensemble across ten nuclear trajectories. No empirical rescaling is applied to any curve.}
++\label{fig:fssh-sensitivity}
++\end{figure}
++
+ \highlight{\textbf{Interpretation.} Plain FSSH permits substantial uphill return and underestimates the observed transfer. Boltzmann rescaling strongly suppresses return from low fullerene states and overestimates the transfer. The experimental curve lies between the two predictions, demonstrating that detailed balance is a dominant physical-model choice rather than a universal correction.}
+ 
+ \subsection{Coherence, recrossing, and dominant pathways}
+-The maximum mean donor--acceptor coherence is 0.426162 at 77.5 fs, showing that the transfer cannot be represented as a sequence of completely incoherent one-way hops. The most active forward channel is $D_2\rightarrow A_1$, with integrated positive flux 0.273903. However, its net signed flux is only 0.029675, whereas its absolute flux is 0.518130. Thus, $D_2\rightarrow A_1$ is the largest exchange channel but not the largest source of net acceptor accumulation.
++The maximum mean donor--acceptor coherence is 0.426162 at 77.5 fs, showing that the transfer cannot be represented as a sequence of completely incoherent one-way hops.
+ 
+ \begin{figure}[H]
+ \centering
+-\begin{tikzpicture}
+-\begin{axis}[
+-  ybar,
+-  width=0.88\textwidth,
+-  height=4.5cm,
+-  ylabel={Integrated positive flux},
+-  symbolic x coords={D2-A1,D2-A3,D1-A3,D1-A2,D3-A2,D3-A1,D4-A3,D4-A2,D3-A3,D4-A1,D2-A2,D1-A1},
+-  xtick=data,
+-  x tick label style={rotate=45,anchor=east,font=\scriptsize},
+-  bar width=10pt,
+-  grid=major
+-]
+-\addplot coordinates {
+-  (D2-A1,0.273903) (D2-A3,0.216658) (D1-A3,0.185530)
+-  (D1-A2,0.183401) (D3-A2,0.164615) (D3-A1,0.145326)
+-  (D4-A3,0.139460) (D4-A2,0.134268) (D3-A3,0.097925)
+-  (D4-A1,0.092338) (D2-A2,0.084038) (D1-A1,0.079446)
+-};
+-\end{axis}
+-\end{tikzpicture}
+-\caption{Integrated positive donor-to-acceptor probability fluxes. $D_2\rightarrow A_1$ is the most dynamically active pair.}
++\includegraphics[width=0.94\textwidth]{../results/figures/coherent/donor_acceptor_coherence.pdf}
++\caption{Mean donor--acceptor coherence, quantified by the Frobenius norm of the donor--acceptor density-matrix block. The shaded region is the 95\% confidence interval across ten nuclear trajectories.}
++\label{fig:coherence}
+ \end{figure}
+ 
+-The largest net-forward channels are $D_1\rightarrow A_3$ (0.072861), $D_1\rightarrow A_2$ (0.053819), $D_3\rightarrow A_2$ (0.049790), and $D_2\rightarrow A_3$ (0.041704). In contrast, $D_2\rightarrow A_2$ has a signed integral of $-0.036544$, indicating net backflow. Summing all twelve channel currents reproduces the time derivative of the acceptor population with a mean RMSE of $6.25\times10^{-5}$ fs$^{-1}$.
++The most active forward channel is $D_2\rightarrow A_1$, with integrated positive flux 0.273903. However, its net signed flux is only 0.029675, whereas its absolute flux is 0.518130. Thus, $D_2\rightarrow A_1$ is the largest exchange channel but not the largest source of net acceptor accumulation.
+ 
+ \begin{figure}[H]
+ \centering
+-\begin{tikzpicture}
+-\begin{axis}[
+-  ybar,
+-  width=0.88\textwidth,
+-  height=4.3cm,
+-  ylabel={Integrated signed flux},
+-  symbolic x coords={D1-A3,D1-A2,D3-A2,D2-A3,D2-A1,D3-A1,D4-A3,D4-A1,D4-A2,D1-A1,D3-A3,D2-A2},
+-  xtick=data,
+-  x tick label style={rotate=45,anchor=east,font=\scriptsize},
+-  bar width=10pt,
+-  grid=major,
+-  extra y ticks={0}
+-]
+-\addplot coordinates {
+-  (D1-A3,0.072861) (D1-A2,0.053819) (D3-A2,0.049790)
+-  (D2-A3,0.041704) (D2-A1,0.029675) (D3-A1,0.021268)
+-  (D4-A3,0.012456) (D4-A1,0.006600) (D4-A2,-0.000708)
+-  (D1-A1,-0.002978) (D3-A3,-0.003041) (D2-A2,-0.036544)
+-};
+-\end{axis}
+-\end{tikzpicture}
+-\caption{Integrated signed fluxes. Positive bars contribute net donor-to-acceptor population transfer; negative bars indicate net backflow.}
++\includegraphics[width=0.96\textwidth]{../results/figures/coherent/dominant_transfer_channels.pdf}
++\caption{Original pathway-analysis output showing the integrated positive probability flux for all twelve donor--acceptor pairs. $D_2\rightarrow A_1$ is the most dynamically active channel, but its signed integral is much smaller because the pair undergoes substantial recrossing.}
++\label{fig:channels}
+ \end{figure}
+ 
++The largest net-forward channels are $D_1\rightarrow A_3$ (0.072861), $D_1\rightarrow A_2$ (0.053819), $D_3\rightarrow A_2$ (0.049790), and $D_2\rightarrow A_3$ (0.041704). In contrast, $D_2\rightarrow A_2$ has a signed integral of $-0.036544$, indicating net backflow. Summing all twelve channel currents reproduces the time derivative of the acceptor population with a mean RMSE of $6.25\times10^{-5}$ fs$^{-1}$.
++
++The complete signed, positive, and absolute pair currents are reported in \path{results/donor_acceptor_channel_flux.csv}; the time-resolved net current is retained as a supplementary output figure.
++
+ \section{Limitations and reproducibility}
+ The principal approximations are:
+ \begin{itemize}
