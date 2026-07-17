@@ -1,0 +1,270 @@
+name: Finalize source inventory
+
+on:
+  push:
+    branches:
+      - submission-ready
+    paths:
+      - ".github/workflows/finalize-source-comments.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: submission-ready
+          fetch-depth: 0
+          show-progress: false
+
+      - name: Add structural QC and order the source tree
+        run: |
+          set -euo pipefail
+
+          git mv src/05_extract_electronic.py src/06_extract_electronic.py
+          git mv src/06_track_states.py src/07_track_states.py
+          git mv src/07_run_fssh.py src/08_run_fssh.py
+          git mv src/08_analyze_fssh.py src/09_analyze_fssh.py
+          git mv src/09_build_reduced_model.py src/10_build_reduced_model.py
+          git mv src/10_plot_libra_experiment.py src/11_plot_libra_experiment.py
+          git mv src/11_compare_fssh_variants.py src/12_compare_fssh_variants.py
+          git mv src/12_analyze_coherent_mechanism.py src/13_analyze_coherent_mechanism.py
+
+          cat > src/05_structural_qc.py <<'PY'
+          #!/usr/bin/env python3
+          """Check fragment separations and RMSD along the production trajectories."""
+          from __future__ import annotations
+
+          import argparse
+          import csv
+          from pathlib import Path
+
+          import numpy as np
+
+          NATOMS = 176
+          FRAGMENTS = {
+              "H2Pc1": slice(0, 58),
+              "H2Pc2": slice(58, 116),
+              "C60": slice(116, 176),
+          }
+          MASSES = {"H": 1.00784, "C": 12.011, "N": 14.007}
+
+
+          def read_xyz_trajectory(path: Path) -> tuple[list[str], np.ndarray]:
+              lines = path.read_text().splitlines()
+              block = NATOMS + 2
+              if len(lines) % block:
+                  raise ValueError(f"{path} contains an incomplete XYZ frame")
+
+              symbols = None
+              frames = []
+              for start in range(0, len(lines), block):
+                  chunk = lines[start : start + block]
+                  current_symbols = []
+                  coordinates = []
+                  for line in chunk[2:]:
+                      fields = line.split()
+                      current_symbols.append(fields[0])
+                      coordinates.append([float(value) for value in fields[1:4]])
+                  if symbols is None:
+                      symbols = current_symbols
+                  elif current_symbols != symbols:
+                      raise ValueError(f"Atom ordering changed in {path}")
+                  frames.append(coordinates)
+              return symbols, np.asarray(frames)
+
+
+          def center_of_mass(coordinates, symbols, fragment):
+              masses = np.array([MASSES[symbol] for symbol in symbols[fragment]])
+              xyz = coordinates[fragment]
+              return np.sum(xyz * masses[:, None], axis=0) / masses.sum()
+
+
+          def kabsch_rmsd(reference, mobile) -> float:
+              ref = reference - reference.mean(axis=0)
+              mob = mobile - mobile.mean(axis=0)
+              left, _, right_h = np.linalg.svd(mob.T @ ref)
+              correction = np.eye(3)
+              correction[-1, -1] = np.sign(np.linalg.det(left @ right_h))
+              aligned = mob @ left @ correction @ right_h
+              return float(np.sqrt(np.mean(np.sum((aligned - ref) ** 2, axis=1))))
+
+
+          def main() -> None:
+              parser = argparse.ArgumentParser()
+              parser.add_argument("--root", type=Path, default=Path("output_production"))
+              parser.add_argument("--ntraj", type=int, default=10)
+              parser.add_argument(
+                  "--output",
+                  type=Path,
+                  default=Path("output_production/structural_qc.csv"),
+              )
+              args = parser.parse_args()
+
+              rows = []
+              for replica in range(args.ntraj):
+                  name = f"{replica:02d}"
+                  symbols, frames = read_xyz_trajectory(
+                      args.root / f"traj_{name}" / "aimd.md.xyz"
+                  )
+                  reference = frames[0]
+                  distances = {key: [] for key in ("H2Pc1_C60", "H2Pc2_C60", "H2Pc1_H2Pc2")}
+                  rmsd = []
+
+                  for coordinates in frames:
+                      centers = {
+                          label: center_of_mass(coordinates, symbols, fragment)
+                          for label, fragment in FRAGMENTS.items()
+                      }
+                      distances["H2Pc1_C60"].append(
+                          np.linalg.norm(centers["H2Pc1"] - centers["C60"])
+                      )
+                      distances["H2Pc2_C60"].append(
+                          np.linalg.norm(centers["H2Pc2"] - centers["C60"])
+                      )
+                      distances["H2Pc1_H2Pc2"].append(
+                          np.linalg.norm(centers["H2Pc1"] - centers["H2Pc2"])
+                      )
+                      rmsd.append(kabsch_rmsd(reference, coordinates))
+
+                  row = {"trajectory": name, "frames": len(frames)}
+                  for label, values in distances.items():
+                      values = np.asarray(values)
+                      row[f"{label}_mean_A"] = values.mean()
+                      row[f"{label}_min_A"] = values.min()
+                      row[f"{label}_max_A"] = values.max()
+                  rmsd = np.asarray(rmsd)
+                  row["final_RMSD_A"] = rmsd[-1]
+                  row["maximum_RMSD_A"] = rmsd.max()
+                  rows.append(row)
+
+              args.output.parent.mkdir(parents=True, exist_ok=True)
+              with args.output.open("w", newline="") as handle:
+                  writer = csv.DictWriter(handle, fieldnames=rows[0].keys())
+                  writer.writeheader()
+                  writer.writerows(rows)
+              print(f"Wrote {args.output}")
+
+
+          if __name__ == "__main__":
+              main()
+          PY
+          sed -i 's/^          //' src/05_structural_qc.py
+          chmod +x src/05_structural_qc.py
+
+      - name: Shorten module documentation and update references
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import ast
+
+          descriptions = {
+              "src/06_extract_electronic.py": "Extract ten-state PySCF electronic data along one AIMD trajectory.",
+              "src/07_track_states.py": "Track the ten-state active space and build the vibronic Hamiltonian.",
+              "src/08_run_fssh.py": "Run classical-path Libra FSSH on a tracked ten-state Hamiltonian.",
+              "src/09_analyze_fssh.py": "Aggregate the ten completed Libra FSSH trajectories.",
+              "src/10_build_reduced_model.py": "Construct and validate the fragment-adapted 4D+3A Hamiltonian.",
+              "src/11_plot_libra_experiment.py": "Build the Libra ensemble and experiment comparison figures.",
+              "src/12_compare_fssh_variants.py": "Compare plain and Boltzmann-rescaled CPA-FSSH with experiment.",
+              "src/13_analyze_coherent_mechanism.py": "Analyze coherent dynamics, coherence, and donor-acceptor currents.",
+          }
+
+          for filename, description in descriptions.items():
+              path = Path(filename)
+              text = path.read_text()
+              tree = ast.parse(text)
+              first = tree.body[0] if tree.body else None
+              if (
+                  isinstance(first, ast.Expr)
+                  and isinstance(first.value, ast.Constant)
+                  and isinstance(first.value.value, str)
+              ):
+                  lines = text.splitlines(keepends=True)
+                  lines[first.lineno - 1 : first.end_lineno] = [f'"""{description}"""\n']
+                  path.write_text("".join(lines))
+
+          replacements = {
+              "src/05_extract_electronic.py": "src/06_extract_electronic.py",
+              "src/06_track_states.py": "src/07_track_states.py",
+              "src/07_run_fssh.py": "src/08_run_fssh.py",
+              "src/08_analyze_fssh.py": "src/09_analyze_fssh.py",
+              "src/09_build_reduced_model.py": "src/10_build_reduced_model.py",
+              "src/10_plot_libra_experiment.py": "src/11_plot_libra_experiment.py",
+              "src/11_compare_fssh_variants.py": "src/12_compare_fssh_variants.py",
+              "src/12_analyze_coherent_mechanism.py": "src/13_analyze_coherent_mechanism.py",
+          }
+          for filename in (
+              "README.md",
+              "docs/REPRODUCIBILITY.md",
+              "docs/SCIENTIFIC_METHOD.md",
+              "docs/RESULTS.md",
+              "src/slurm/02_electronic_array.slurm",
+              "src/slurm/03_tracking_array.slurm",
+              "src/slurm/04_libra_array.slurm",
+          ):
+              path = Path(filename)
+              text = path.read_text()
+              for old, new in replacements.items():
+                  text = text.replace(old, new)
+              path.write_text(text)
+
+          Path("src/README.md").write_text('''# Source code
+
+          The numbered programs follow the calculation in execution order.
+
+          | Program | Role |
+          |---|---|
+          | `00_validate_geometry.py` | Validate atom count, composition, and fragment ordering |
+          | `01_frontier_analysis.py` | Static frontier orbitals and donor-LUMO projection |
+          | `02_relax_geometry.py` | Initial PySCF/geomeTRIC relaxation |
+          | `03_prepare_replicas.py` | Recreate the ten production starts from a thermalization trajectory |
+          | `04_run_aimd.py` | PySCF Born-Oppenheimer AIMD |
+          | `05_structural_qc.py` | Fragment separations and trajectory RMSD checks |
+          | `06_extract_electronic.py` | Orbital energies, coefficients, projectors, and initial state |
+          | `07_track_states.py` | Orbital assignment, phase tracking, and derivative couplings |
+          | `08_run_fssh.py` | Libra CPA-FSSH propagation |
+          | `09_analyze_fssh.py` | FSSH ensemble aggregation |
+          | `10_build_reduced_model.py` | Construct and validate the 4D+3A Hamiltonian |
+          | `11_plot_libra_experiment.py` | Libra estimator and experiment figures |
+          | `12_compare_fssh_variants.py` | Plain/Boltzmann detailed-balance sensitivity |
+          | `13_analyze_coherent_mechanism.py` | Coherent dynamics, coherence, and pathway currents |
+
+          Portable submission templates are under `src/slurm/`. Comments are limited to equations, assumptions, and implementation choices that are not obvious from the code.
+          '''.replace("          ", ""))
+
+          readme = Path("README.md")
+          text = readme.read_text()
+          marker = "### 2. Production AIMD and electronic Hamiltonians\n\n"
+          text = text.replace(
+              marker,
+              marker + "After AIMD, the structural quality-control table can be regenerated with:\n\n```bash\npython src/05_structural_qc.py --root output_production --ntraj 10\n```\n\n",
+          )
+          readme.write_text(text)
+
+          repro = Path("docs/REPRODUCIBILITY.md")
+          text = repro.read_text().replace(
+              "These stages generate ten 100 fs nuclear trajectories, 2,000 electronic snapshots, tracked ten-state Hamiltonians, and plain CPA-FSSH ensembles.",
+              "These stages generate ten 100 fs nuclear trajectories, 2,000 electronic snapshots, tracked ten-state Hamiltonians, and plain CPA-FSSH ensembles. Run `python src/05_structural_qc.py --root output_production --ntraj 10` to regenerate the fragment-separation and RMSD checks.",
+          )
+          repro.write_text(text)
+          PY
+
+          rm .github/workflows/finalize-source-comments.yml
+
+      - name: Validate and commit
+        run: |
+          set -euo pipefail
+          python src/00_validate_geometry.py
+          python -m compileall -q src
+          if grep -R -n -i "TENSO\|cybersecurity\|biological" src; then
+            exit 1
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Complete and streamline the source inventory"
+          git push origin submission-ready
