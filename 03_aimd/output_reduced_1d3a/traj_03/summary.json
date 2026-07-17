@@ -1,0 +1,19 @@
+{
+  "input": "output_tracked/traj_03/tracked_data.npz",
+  "model": "1 donor state + lower 3-state C60 manifold",
+  "nframes": 200,
+  "initial_reduced_capture": 0.9972309602992914,
+  "minimum_donor_transport_overlap": 0.8423136859798039,
+  "minimum_acceptor_subspace_singular_value": 0.9998108030958819,
+  "minimum_reduced_overlap_singular_value": 0.842313654753456,
+  "maximum_reduced_overlap_orthogonality_error": 0.2905078551192741,
+  "mean_upper_acceptor_gap_eV": 0.8320316366870955,
+  "full_final_c60_population": 0.26195473449728823,
+  "reduced_final_c60_population": 0.8041600604370391,
+  "final_population_error": 0.5422053259397509,
+  "population_rmse": 0.46538352401579464,
+  "population_mae": 0.4074251327865288,
+  "population_max_abs_error": 0.8114081788339738,
+  "maximum_full_norm_error": 4.440892098500626e-15,
+  "maximum_reduced_norm_error": 3.552713678800501e-15
+}

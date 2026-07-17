@@ -1,0 +1,13 @@
+{
+  "ntrajectories": 10,
+  "nframes": 199,
+  "time_step_fs": 0.5,
+  "frequency_spacing_cm_inverse": 335.2402966815599,
+  "maximum_frequency_analyzed_cm_inverse": 4000.0,
+  "pca_modes_included": 18,
+  "pca_variance_fraction_included": 0.9901333898379943,
+  "frequency_smoothing_half_width_bins": 1,
+  "power_weighted_mean_rank95": 11.175346727191222,
+  "power_weighted_imaginary_cross_spectrum_fraction": 0.4368503038139436,
+  "important_note": "The shared operators are obtained from the real symmetric cross-spectrum. The reported imaginary fraction measures the phase-lagged part omitted by this real frequency-local decomposition."
+}

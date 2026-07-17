@@ -1,0 +1,10 @@
+{
+  "output": "output_tenso/campaign/12m_5fs/tenso_12m_dim4_rank8_ltc1_static-1.dat.log",
+  "initial_acceptor_population": 1.77e-06,
+  "final_acceptor_population": 0.01734095,
+  "final_acceptor_population_trace_normalized": 0.017373330065108748,
+  "maximum_acceptor_population": 0.01734095,
+  "maximum_trace_error": 0.001981831318957379,
+  "maximum_hermiticity_error": 0.0026324509367887583,
+  "minimum_trace_normalized_density_eigenvalue": 1.0172137496573445e-08
+}

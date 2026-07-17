@@ -1,0 +1,8 @@
+{
+  "output": "output_tenso/pca_diagonal_tight/tenso_04m_dim4_rank8_ltc1_static-1.dat.log",
+  "initial_acceptor_population": 1.77e-06,
+  "final_acceptor_population": 0.015590409999999999,
+  "maximum_acceptor_population": 0.015590409999999999,
+  "maximum_trace_error": 0.0014598085799514264,
+  "maximum_hermiticity_error": 0.00016254698705297444
+}

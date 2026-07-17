@@ -1,0 +1,10 @@
+{
+  "output": "output_tenso/campaign/8m_preflight_1fs/tenso_08m_dim4_rank8_ltc1_static-1.dat.log",
+  "initial_acceptor_population": 1.77e-06,
+  "final_acceptor_population": 0.0009499200000000001,
+  "final_acceptor_population_trace_normalized": 0.0009499095699929214,
+  "maximum_acceptor_population": 0.0009499200000000001,
+  "maximum_trace_error": 1.2599714282566145e-05,
+  "maximum_hermiticity_error": 9.657320125169464e-05,
+  "minimum_trace_normalized_density_eigenvalue": 1.0172137496573445e-08
+}

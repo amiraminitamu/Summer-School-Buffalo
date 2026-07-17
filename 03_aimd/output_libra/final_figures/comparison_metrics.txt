@@ -1,0 +1,27 @@
+Libra versus digitized experiment
+===================================
+
+Comparison interval: 0.0-99.5 fs
+Number of nuclear trajectories: 10
+
+Paper-style hybrid CPA-FSSH estimator
+  initial population: 0.00139083
+  final population:   0.28085041
+  experiment final:   0.60856707
+  RMSE:               0.19221366
+  MAE:                0.17923229
+  first P >= 0.25:    64.50 fs
+  first P >= 0.50:    nan fs
+
+Pure coherent estimator
+  initial population: 0.00143806
+  final population:   0.27978528
+  RMSE:               0.19243572
+  MAE:                0.17942032
+  first P >= 0.25:    64.50 fs
+  first P >= 0.50:    nan fs
+
+Important:
+  The experimental series is an approximate digitization of Figure 3A,
+  not original raw SHG data. The hybrid estimator is the apples-to-apples
+  comparison with the population convention used in the reference paper.

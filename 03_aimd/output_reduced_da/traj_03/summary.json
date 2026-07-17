@@ -1,0 +1,21 @@
+{
+  "input": "output_tracked/traj_03/tracked_data.npz",
+  "nframes": 200,
+  "projector_cutoff": 0.5,
+  "initial_full_active_capture": 0.9992311298669763,
+  "initial_donor_projection_norm": 0.9999987879665266,
+  "projector_eigenvalue_max_donor": 0.00992032865726821,
+  "projector_eigenvalue_min_acceptor": 0.9721450353343847,
+  "minimum_donor_transport_overlap": 0.999999895639589,
+  "minimum_acceptor_transport_overlap": 0.9993689428029211,
+  "minimum_reduced_singular_value": 0.9993689514096852,
+  "maximum_reduced_overlap_orthogonality_error": 0.0012616989583126505,
+  "mean_gap_eV": 0.3568073492413325,
+  "std_gap_eV": 0.15355073792674825,
+  "mean_abs_coupling_eV": 0.03172646576455873,
+  "max_abs_coupling_eV": 0.05674845424039627,
+  "mean_donor_residual_eV": 0.09973894715479859,
+  "mean_acceptor_residual_eV": 0.47074057809255615,
+  "mean_donor_back_residual_eV": 0.08625117484227551,
+  "maximum_reduced_hvib_hermiticity_error": 0.0
+}
