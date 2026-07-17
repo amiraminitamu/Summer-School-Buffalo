@@ -1,7 +1,0 @@
-numpy>=1.26
-scipy>=1.11
-matplotlib>=3.8
-pandas>=2.1
-pyscf>=2.3
-pyscf-dispersion
-geometric

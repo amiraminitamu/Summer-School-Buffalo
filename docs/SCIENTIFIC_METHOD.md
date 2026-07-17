@@ -1,37 +1,71 @@
-# Scientific method and approximations
+# Scientific method and definitions
 
-## Electronic structure and nuclear sampling
+## Electronic structure and nuclear paths
 
-The neutral 176-atom complex is propagated with restricted Kohn-Sham PBE-D3BJ/6-31G Born-Oppenheimer AIMD. Dispersion is included for nuclear forces because the donor-acceptor stack is noncovalently bound. Frame-resolved orbital calculations use PBE/6-31G; the D3 correction changes the energy and gradient but not the Kohn-Sham orbitals used here.
+Ten independent 100 fs ground-state Born-Oppenheimer AIMD trajectories are generated for the neutral 176-atom complex at 300 K. The production electronic calculations use PBE/6-31G Kohn-Sham orbitals along each prescribed nuclear path.
 
-Ten independent 100 fs trajectories are sampled at 300 K with 0.5 fs nuclear steps. The first ten unoccupied orbitals define the active single-particle space. The initial state is the isolated donor-dimer LUMO projected into this active space.
+## Active space and fragment observable
 
-## Orbital tracking
+The active space consists of the first ten unoccupied Kohn-Sham orbitals. The initial electronic state is the isolated donor-dimer LUMO projected into this space. A symmetrized Mulliken projector defines the C60 charge population,
 
-For adjacent geometries, cross-basis AO overlaps are evaluated and transformed into the active MO space. States are assigned with the Hungarian algorithm by maximizing total absolute overlap. Real-orbital phases are corrected, and the closest unitary polar factor `U` is used to define
+\[
+P_{C_{60}}(t)=\mathbf c^\dagger(t)\mathbf P_{C_{60}}(t)\mathbf c(t).
+\]
 
-`D = log(U) / dt` and `H_vib = E_mid - i D` in atomic units.
+## State tracking
 
-The anti-Hermiticity of `D`, Hermiticity of `H_vib`, overlap singular values, and assignment quality are written for every interval. These are Kohn-Sham orbital derivative couplings, not many-electron TDDFT nonadiabatic couplings.
+For adjacent nuclear geometries,
 
-## Libra dynamics and observables
+\[
+O_{ij}^{(n)}=\langle\psi_i(R_n)|\psi_j(R_{n+1})\rangle.
+\]
 
-The electronic amplitudes are advanced by an exact matrix exponential for each piecewise-constant 10x10 Hamiltonian interval. Libra supplies active-state-specific Tully FSSH probabilities. Nuclear paths are prescribed, so this is classical-path/NBRA-style FSSH with no force feedback or momentum rescaling.
+A Hungarian assignment maximizes the total absolute overlap. Orbital phases are fixed by the matched diagonal. The closest-unitary polar factor `U` is used to define
 
-Three C60 observables are distinguished:
+\[
+\mathbf D_{n+1/2}=\frac{1}{\Delta t}\log \mathbf U_n,
+\qquad
+\mathbf H_{\mathrm{vib},n+1/2}=\mathbf E_{n+1/2}-i\mathbf D_{n+1/2}.
+\]
 
-1. coherent expectation `c^dagger P_C60 c`;
-2. active-surface diagonal average;
-3. the reference-paper hybrid estimator, which uses FSSH populations on the density-matrix diagonal and coherent amplitudes off diagonal.
+These are Kohn-Sham orbital time-derivative couplings, not many-electron TDDFT nonadiabatic couplings.
 
-The hybrid estimator is used for the closest comparison with Figure 3A of the reference paper. Plain and Boltzmann-rescaled upward-hop variants are both reported as a sensitivity analysis.
+## Coherent dynamics
+
+For each piecewise-constant midpoint Hamiltonian,
+
+\[
+\mathbf c(t+\Delta t)=
+\exp[-i\mathbf H_{\mathrm{vib}}\Delta t]\mathbf c(t).
+\]
+
+“Exact” refers to the matrix exponential within the finite ten-state Hamiltonian, not to exact molecular quantum dynamics.
+
+## Surface hopping
+
+Libra evaluates classical-path fewest-switches hopping probabilities for stochastic active-surface histories. The plain calculation uses the standard hopping probabilities. The sensitivity calculation multiplies thermally uphill hops by
+
+\[
+\exp[-(E_j-E_i)/(k_BT)], \qquad E_j>E_i.
+\]
+
+The coherent amplitudes are identical in the two variants; only the stochastic active-state populations differ.
 
 ## Reduced model
 
-The C60 projector partitions the ten-state space into four donor and six acceptor directions. The retained seven-dimensional model contains the complete four-state donor subspace and the lower three acceptor states. Fragment subspaces are parallel transported before projecting the Hamiltonian and projector. Full and reduced propagations are compared trajectory by trajectory; the ensemble RMSE is the reduction quality criterion.
+The retained seven-dimensional space contains the complete four-state donor subspace and the lowest three-state C60 subspace. The fragment bases are parallel transported, and the reduced Hamiltonian is constructed independently using the same overlap/polar/matrix-log procedure.
 
-## Bath model and TENSO
+## Probability-current analysis
 
-The traceless within-trajectory fluctuations of the 7x7 vibronic Hamiltonian are expanded in an orthonormal generalized Gell-Mann basis. PCA defines noncommuting system-bath operators. Per-mode classical autocorrelations are fitted to a Drude relaxation plus one damped Brownian band. Static between-trajectory offsets are kept separate from the dynamic bath.
+For donor state `d` and acceptor state `a`, the instantaneous forward current is
 
-TENSO receives the reduced system Hamiltonian, PCA operators, and fitted spectral parameters. Its result is numerically exact only within the finite reduced Hamiltonian, chosen mode truncation, correlation mapping, local dimensions, and tensor-rank convergence—not for the full molecular Hilbert space.
+\[
+J_{d\rightarrow a}(t)=
+2\,\mathrm{Im}\left[H_{ad}(t)c_d(t)c_a^*(t)\right].
+\]
+
+The signed integral measures net transfer. The positive integral measures total forward activity, and the absolute integral quantifies bidirectional exchange. Consequently, a channel can be dynamically dominant while contributing little net population because of recrossing.
+
+## Statistical reporting
+
+All coherent and reduced-model ensemble means use ten independent nuclear trajectories. Reported uncertainty bands are 95% confidence intervals computed as `1.96 s / sqrt(10)`.

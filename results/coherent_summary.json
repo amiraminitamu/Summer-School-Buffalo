@@ -1,0 +1,20 @@
+{
+  "n_trajectories": 10,
+  "duration_fs": 99.5,
+  "full_10state_final_c60_mean": 0.2797852840360925,
+  "full_10state_final_c60_ci95": 0.09634879571036511,
+  "reduced_4d3a_final_c60_mean": 0.2462085110650049,
+  "reduced_4d3a_final_c60_ci95": 0.08820080696585446,
+  "mean_trajectory_reduction_rmse": 0.02509438652903742,
+  "ensemble_curve_reduction_rmse": 0.01830057529602825,
+  "maximum_projector_partition_population_difference": 0.0064023863450419355,
+  "mean_flux_continuity_rmse_per_fs": 6.248717024270712e-05,
+  "maximum_mean_donor_acceptor_coherence": 0.4261616654813209,
+  "time_of_maximum_mean_coherence_fs": 77.5,
+  "dominant_positive_flux_channel": {
+    "donor_state": 2,
+    "acceptor_state": 1,
+    "mean_integrated_positive_flux": 0.2739028682179946
+  },
+  "interpretation": "Numerically exact unitary propagation within the trajectory-specific ten-state Hamiltonians, with an independently constructed 4D+3A reduced-model control and pair-resolved donor-acceptor probability flux."
+}

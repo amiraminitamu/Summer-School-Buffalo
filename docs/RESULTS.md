@@ -2,29 +2,47 @@
 
 ## State tracking
 
-The minimum singular value of all consecutive active-space overlaps across 2,000 snapshots is 0.999580. This indicates that the ten-state subspace remains continuous and makes the matrix-log derivative-coupling construction numerically defensible.
+Across 2,000 electronic snapshots, the minimum singular value of all consecutive active-space overlaps is `0.999580`. The ten-state subspace therefore remains continuous even when near-degenerate fullerene orbitals rotate strongly within their manifold.
 
-## Libra versus experiment
+## Coherent and reduced-model dynamics
 
-At 99.5 fs, the paper-style hybrid estimator is 0.280850 for plain CPA-FSSH, compared with 0.608567 from the approximate digitized SHG trace. The full-window RMSE is 0.192214. The coherent estimator is 0.279785, demonstrating that the paper-style diagonal replacement has little effect for the plain run at the endpoint.
+At 99.5 fs, the full ten-state coherent ensemble gives
 
-Boltzmann rescaling leaves the coherent amplitudes unchanged but raises the hybrid endpoint to 0.898903 and worsens RMSE to 0.304553. Thus plain dynamics under-transfer while the rescaled dynamics over-transfer. The result exposes strong sensitivity to the treatment of upward hops and the underlying electronic energy landscape.
+`P(C60) = 0.279785 +/- 0.096349`.
 
-## Reduced model
+The independently constructed 4D+3A model gives
 
-The retained 4D+3A model gives an ensemble endpoint of 0.246209 and RMSE 0.018301 relative to the full ten-state coherent propagation. This is sufficiently accurate for bath extraction while removing the upper three C60 directions.
+`P(C60) = 0.246209 +/- 0.088201`.
 
-## Bath and TENSO
+The ensemble-curve RMSE is `0.018301`, and the mean trajectory-level RMSE is `0.025094`. The maximum difference between the fragment-projector population and the simple acceptor-subspace population is `0.006402`.
 
-Eighteen PCA components span the sampled fluctuation coordinates; twelve retain 90.764% of the variance. The within-path dynamic RMS is 0.20880 eV and the between-path static RMS is 0.14255 eV.
+## Surface-hopping sensitivity
 
-At 5 fs, four-mode TENSO calculations converge near 0.016691 C60 population with maximum trace errors near 10^-7 and Hermiticity errors near 10^-5 when the auxiliary-rank ceiling is 64. Dimension, initial rank, Padé order, and time-step tests change the endpoint by at most approximately 1.1e-4. A longer 12-mode production run is treated as a finite reduced-model calculation, not a full-system exact benchmark.
+The approximate digitized experimental endpoint is `0.608567`. Plain CPA-FSSH gives `0.280850` with full-window RMSE `0.192214`. Boltzmann-rescaled upward hops give `0.898903` with RMSE `0.304553`.
+
+Thus the plain treatment under-transfers, while the rescaled treatment over-transfers. The published experimental curve lies between them, showing that detailed balance is a major model choice rather than a universal correction.
+
+## Coherence and pathways
+
+The maximum mean donor-acceptor coherence is `0.426162` at `77.5 fs`. The most active positive-flux channel is `D2 -> A1`, with integrated positive flux `0.273903`. Its signed transfer is only `0.029675`, while its absolute transfer is `0.518130`, establishing substantial bidirectional recrossing.
+
+The largest net-forward channels are:
+
+- `D1 -> A3`: `0.072861`;
+- `D1 -> A2`: `0.053819`;
+- `D3 -> A2`: `0.049790`;
+- `D2 -> A3`: `0.041704`.
+
+The integrated current satisfies the acceptor-population continuity relation with mean RMSE `6.25e-5 fs^-1`.
+
+## Supported conclusion
+
+The 4D+3A Hamiltonian is a compact and quantitatively validated representation of the coherent ten-state dynamics. Charge transfer is multichannel and strongly recrossing. The main disagreement with experiment is therefore a physical-model issue - electronic structure, nuclear-path approximation, and detailed balance - rather than a state-tracking or propagation instability.
 
 ## Limitations
 
-- Single-particle ground-state Kohn-Sham orbitals replace many-electron excited states.
-- Nuclear paths are ground-state, thermostatted, and do not receive electronic back-reaction.
-- No decoherence correction is applied to the coherent amplitudes.
-- The experimental trace is digitized from a published plot and lacks original error bars.
-- The PCA-diagonal bath neglects residual finite-lag cross-correlations between retained modes.
-- TENSO is exact only within the reduced, truncated, fitted model.
+- Ground-state Kohn-Sham orbitals replace many-electron excited states.
+- Nuclear paths are prescribed, thermostatted, and receive no electronic back-reaction.
+- No explicit electronic decoherence is applied to the coherent amplitudes.
+- The experimental trace is digitized from a published figure and lacks original error bars.
+- The reduced model is exact only relative to the finite active-space construction used here.

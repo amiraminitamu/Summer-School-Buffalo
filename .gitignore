@@ -1,43 +1,33 @@
 # Python
 __pycache__/
 *.py[cod]
-.ipynb_checkpoints/
 .pytest_cache/
+.ipynb_checkpoints/
 
 # Environments
 .conda/
 venv/
 .env/
 
-# Slurm and runtime logs
-logs/
+# Scheduler and logs
 slurm-*.out
 *.err
+*.log
 *.debug.log
-*.dat.log
 *.md.data
 
-# Large computational outputs
-output/
-output_*/
-outputs/
-scratch/
-tmp/
+# Large computational intermediates
+output*/
 checkpoints/
 *.chk
-*.h5
-*.hdf5
-*.npy
 *.npz
-*.cube
-*.wfn
-*.gbw
+*.npy
 *.molden
 *.traj
 *.restart
+*.md.xyz
 *.tar.gz
 *.zip
-*.md.xyz
 
 # LaTeX build products
 *.aux
@@ -45,7 +35,6 @@ checkpoints/
 *.blg
 *.fdb_latexmk
 *.fls
-*.log
 *.out
 *.synctex.gz
 *.toc

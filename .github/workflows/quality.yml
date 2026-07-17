@@ -12,17 +12,21 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Install lightweight dependency
-        run: python -m pip install numpy
+      - name: Install lightweight dependencies
+        run: python -m pip install numpy scipy matplotlib
       - name: Validate geometry
         run: python 01_geometry/validate_geometry.py
       - name: Compile Python sources
-        run: python -m compileall -q 01_geometry 02_pyscf_static 03_aimd/scripts
+        run: python -m compileall -q 01_geometry 03_aimd/scripts
       - name: Reject accidental large files
         run: |
           python - <<'PY'
           from pathlib import Path
-          bad = [p for p in Path('.').rglob('*') if p.is_file() and '.git' not in p.parts and p.stat().st_size > 20_000_000]
+          bad = [
+              p for p in Path('.').rglob('*')
+              if p.is_file() and '.git' not in p.parts
+              and p.stat().st_size > 20_000_000
+          ]
           if bad:
               raise SystemExit('Large tracked files: ' + ', '.join(map(str, bad)))
           PY

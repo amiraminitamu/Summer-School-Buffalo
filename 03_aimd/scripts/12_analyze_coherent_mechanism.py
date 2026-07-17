@@ -1,18 +1,17 @@
 #!/usr/bin/env python3
-"""Analyze exact coherent charge-transfer dynamics and transfer pathways.
+"""Analyze coherent charge-transfer dynamics and transfer pathways.
 
-This script uses the already generated 4D+3A reduced-model files.  It does not
-run PySCF, Libra, or TENSO.  For each nuclear trajectory it evaluates
+This script uses the already generated 4D+3A reduced-model files. It does not
+run PySCF or Libra. For each nuclear trajectory it evaluates
 
 * numerically exact unitary propagation in the full ten-state Hamiltonian;
 * the independently constructed seven-state propagation;
-* donor--acceptor coherence and participation measures; and
+* donor-acceptor coherence and participation measures; and
 * pair-resolved probability currents between four donor and three acceptor
   states.
 
-The calculation normally finishes in seconds.  The term "exact" refers only
-to unitary propagation within the finite time-dependent Hamiltonian supplied
-in each model_4d3a.npz file.
+The term "exact" refers only to unitary propagation within the finite,
+time-dependent Hamiltonian supplied in each model_4d3a.npz file.
 """
 from __future__ import annotations
 
@@ -59,7 +58,7 @@ def ci95(values: np.ndarray) -> np.ndarray:
 
 
 def block_coherence(coefficients: np.ndarray) -> np.ndarray:
-    """Frobenius norm of the donor--acceptor density-matrix block."""
+    """Frobenius norm of the donor-acceptor density-matrix block."""
     donor = coefficients[:, :NDONOR]
     acceptor = coefficients[:, NDONOR:]
     rho_da = np.einsum("td,ta->tda", donor, acceptor.conj())
@@ -89,8 +88,7 @@ def interval_currents(
             + hvib_mid_hartree[interval].conj().T
         )
 
-        # The Hamiltonian is piecewise constant on each nuclear interval, so
-        # this gives the exact electronic coefficient at the interval midpoint.
+        # The Hamiltonian is piecewise constant on each nuclear interval.
         c_mid = expm(-1j * h * (0.5 * dt_au)) @ coefficients[interval]
 
         for donor in range(NDONOR):
@@ -336,7 +334,7 @@ def main() -> None:
     plt.close()
 
     plt.figure(figsize=(7.2, 4.7))
-    plt.plot(time_fs, coherence_mean, label="Donor--acceptor coherence")
+    plt.plot(time_fs, coherence_mean, label="Donor-acceptor coherence")
     plt.fill_between(
         time_fs,
         coherence_mean - ci95(coherence),
@@ -344,7 +342,7 @@ def main() -> None:
         alpha=0.2,
     )
     plt.xlabel("Time (fs)")
-    plt.ylabel(r"$\lVert\rho_{DA}\rVert_F$")
+    plt.ylabel("Donor-acceptor coherence (Frobenius norm)")
     plt.xlim(time_fs[0], time_fs[-1])
     plt.tight_layout()
     plt.savefig(args.outdir / "donor_acceptor_coherence.pdf")
@@ -383,8 +381,8 @@ def main() -> None:
             time_fs[np.argmax(coherence_mean)]
         ),
         "dominant_positive_flux_channel": {
-            "donor_state": dominant_donor + 1,
-            "acceptor_state": dominant_acceptor + 1,
+            "donor_state": int(dominant_donor + 1),
+            "acceptor_state": int(dominant_acceptor + 1),
             "mean_integrated_positive_flux": float(
                 np.mean(
                     positive_transfer[
