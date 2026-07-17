@@ -7,6 +7,7 @@ on:
     paths:
       - "report/Project_Report.tex"
       - "results/figures/**"
+      - ".github/report-figures.patch"
       - ".github/workflows/build-report.yml"
   workflow_dispatch:
 
@@ -21,21 +22,34 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: submission-ready
+          fetch-depth: 0
+
+      - name: Install original analysis figures in report source
+        run: |
+          set -euo pipefail
+          if [ -f .github/report-figures.patch ]; then
+            patch -p3 < .github/report-figures.patch
+            rm .github/report-figures.patch
+            rm -f .github/workflows/apply-report-figures.yml
+          fi
+
       - name: Install LaTeX
         run: |
           sudo apt-get update
           sudo apt-get install -y latexmk texlive-latex-extra texlive-science lmodern
+
       - name: Compile report
         working-directory: report
         run: latexmk -pdf -interaction=nonstopmode -halt-on-error Project_Report.tex
-      - name: Commit compiled PDF
+
+      - name: Commit revised source and compiled PDF
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add report/Project_Report.pdf
+          git add -A
           if git diff --cached --quiet; then
-            echo "Compiled PDF is current."
+            echo "Report source and PDF are current."
           else
-            git commit -m "Build capstone report PDF"
+            git commit -m "Feature original coherent and Libra figures in report"
             git push origin submission-ready
           fi
