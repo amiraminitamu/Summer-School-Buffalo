@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
-"""Born-Oppenheimer AIMD for the neutral 2H2Pc/C60 complex using PySCF forces.
-
-Defaults are intentionally inexpensive so a fresh installation can perform a
-smoke test. Production calculations override the basis, step count, threads,
-and output directory through the command line or the supplied Slurm script.
-"""
+"""Run Born-Oppenheimer AIMD for the neutral 2H2Pc/C60 complex."""
 from __future__ import annotations
 
 import argparse
@@ -15,23 +10,21 @@ from pyscf import dft, gto, lib, md
 from pyscf.md.integrators import NVTBerendson
 
 FS_TO_AU = 41.34137333518211
-HERE = Path(__file__).resolve().parent
-ROOT = HERE.parents[1]
-DEFAULT_XYZ = ROOT / "01_geometry" / "2H2Pc_C60.xyz"
+ROOT = Path(__file__).resolve().parent.parent
 
 
 def read_xyz(path: Path):
     lines = path.read_text().splitlines()
-    natm = int(lines[0])
-    rows = [line.split() for line in lines[2 : 2 + natm]]
-    if len(rows) != natm:
-        raise ValueError(f"{path}: expected {natm} atoms, found {len(rows)}")
-    return [(row[0], tuple(float(v) for v in row[1:4])) for row in rows]
+    natoms = int(lines[0])
+    rows = [line.split() for line in lines[2 : 2 + natoms]]
+    if len(rows) != natoms:
+        raise ValueError(f"{path}: expected {natoms} atoms, found {len(rows)}")
+    return [(row[0], tuple(float(value) for value in row[1:4])) for row in rows]
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--xyz", type=Path, default=DEFAULT_XYZ)
+    parser.add_argument("--xyz", type=Path, default=ROOT / "data" / "2H2Pc_C60.xyz")
     parser.add_argument("--basis", default="sto-3g")
     parser.add_argument("--xc", default="pbe-d3bj")
     parser.add_argument("--grid-level", type=int, default=1)
@@ -43,7 +36,7 @@ def main() -> None:
     parser.add_argument("--threads", type=int, default=8)
     parser.add_argument("--memory-mb", type=int, default=56000)
     parser.add_argument("--conv-tol", type=float, default=1e-7)
-    parser.add_argument("--outdir", type=Path, default=HERE / "output_aimd")
+    parser.add_argument("--outdir", type=Path, default=ROOT / "output_aimd")
     args = parser.parse_args()
 
     if args.dt_fs <= 0 or args.tau_fs <= 0 or args.steps <= 0:
@@ -71,7 +64,9 @@ def main() -> None:
     mf.small_rho_cutoff = 1e-7
     mf.conv_tol = args.conv_tol
     mf.conv_tol_grad = max(args.conv_tol**0.5, 3e-4)
-    mf.max_cycle = 80
+    mf.max_cycle = 110
+    mf.diis_space = 12
+    mf.level_shift = 0.10
     mf.chkfile = str(args.outdir / "aimd.chk")
     mf = mf.density_fit()
 
@@ -83,9 +78,7 @@ def main() -> None:
     if not mf.converged:
         raise RuntimeError("Initial SCF did not converge")
 
-    velocities = md.distributions.MaxwellBoltzmannVelocity(
-        mol, T=args.temperature
-    )
+    velocity = md.distributions.MaxwellBoltzmannVelocity(mol, T=args.temperature)
     scanner = mf.nuc_grad_method().as_scanner()
     integrator = NVTBerendson(
         scanner,
@@ -93,7 +86,7 @@ def main() -> None:
         taut=args.tau_fs * FS_TO_AU,
         dt=args.dt_fs * FS_TO_AU,
         steps=args.steps,
-        veloc=velocities,
+        veloc=velocity,
         data_output=str(args.outdir / "aimd.md.data"),
         trajectory_output=str(args.outdir / "aimd.md.xyz"),
         incore_anyway=False,
@@ -111,9 +104,6 @@ if __name__ == "__main__":
     try:
         main()
     except ModuleNotFoundError as exc:
-        if "dftd3" in str(exc).lower() or "dftd4" in str(exc).lower():
-            print(
-                "Dispersion extension missing. Install pyscf-dispersion or use --xc pbe.",
-                file=sys.stderr,
-            )
+        if "dftd" in str(exc).lower():
+            print("Install pyscf-dispersion or use --xc pbe.", file=sys.stderr)
         raise

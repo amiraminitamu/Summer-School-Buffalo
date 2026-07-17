@@ -3,9 +3,9 @@
 [![Repository checks](https://github.com/amiraminitamu/Summer-School-Buffalo/actions/workflows/quality.yml/badge.svg?branch=submission-ready)](https://github.com/amiraminitamu/Summer-School-Buffalo/actions/workflows/quality.yml)
 [![Build report](https://github.com/amiraminitamu/Summer-School-Buffalo/actions/workflows/build-report.yml/badge.svg?branch=submission-ready)](https://github.com/amiraminitamu/Summer-School-Buffalo/actions/workflows/build-report.yml)
 
-A focused, reproducible theoretical-chemistry workflow for photoinduced charge transfer from a free-base phthalocyanine dimer donor (`2H2Pc`) to a fullerene acceptor (`C60`). The project combines PySCF molecular dynamics and electronic-structure calculations, cross-geometry orbital tracking, exact unitary propagation in a finite active space, Libra classical-path fewest-switches surface hopping, and a fragment-adapted reduced Hamiltonian with pathway-resolved probability currents.
+A reproducible theoretical-chemistry workflow for photoinduced charge transfer from a free-base phthalocyanine dimer donor (`2H2Pc`) to a fullerene acceptor (`C60`). It combines PySCF molecular dynamics and electronic structure, cross-geometry orbital tracking, exact unitary propagation in a finite active space, Libra classical-path fewest-switches surface hopping, and a fragment-adapted reduced Hamiltonian with pathway-resolved probability currents.
 
-> **Scope:** this project is exclusively a charge-transport theoretical study. It contains no cybersecurity analysis and no biological modeling.
+> **Scope:** this is exclusively a theoretical charge-transport study. It contains no cybersecurity analysis and no biological modeling.
 
 ## Scientific question
 
@@ -15,10 +15,10 @@ How do coherent electronic dynamics, stochastic surface hopping, detailed balanc
 10 x 100 fs PySCF AIMD trajectories
         |
         v
-KS orbitals + C60 fragment projectors at 2,000 snapshots
+KS orbitals + C60 projectors at 2,000 snapshots
         |
         v
-cross-geometry orbital tracking + matrix-log derivative couplings
+orbital tracking + matrix-log derivative couplings
         |
         +----------------------+
         |                      |
@@ -27,10 +27,10 @@ exact 10-state unitary      Libra CPA-FSSH
 propagation                 plain / Boltzmann
         |
         v
-validated 4 donor + 3 acceptor model
+validated 4 donor + 3 acceptor Hamiltonian
         |
         v
-coherence and donor-to-acceptor probability-current analysis
+coherence and donor-to-acceptor probability currents
 ```
 
 ## Main findings
@@ -47,63 +47,37 @@ coherence and donor-to-acceptor probability-current analysis
 | Maximum mean donor-acceptor coherence | `0.4262` at `77.5 fs` |
 | Dominant positive-flux channel | `D2 -> A1` (`0.2739`) |
 
-The experiment lies between the plain and Boltzmann-rescaled surface-hopping predictions. The reduced model accurately reproduces the full coherent ensemble, and the flux analysis shows that the most dynamically active donor-acceptor pair is dominated by recrossing rather than by net forward accumulation.
+The experiment lies between the plain and Boltzmann-rescaled surface-hopping predictions. The reduced model closely follows the full coherent ensemble, while the channel analysis shows strong recrossing rather than simple one-way transfer.
 
 ## Key figures
 
 ### Detailed-balance sensitivity
 
-![Plain and Boltzmann-rescaled CPA-FSSH compared with the digitized SHG experiment](results/figures/libra/fig_plain_boltzmann_experiment.png)
-
-Plain CPA-FSSH under-transfers while the Boltzmann-rescaled prescription over-transfers. The experimental trace lies between the two predictions, showing that the treatment of uphill return is a decisive model choice.
+![Plain and Boltzmann-rescaled CPA-FSSH compared with experiment](results/figures/libra/fig_plain_boltzmann_experiment.png)
 
 ### Full versus reduced coherent dynamics
 
-![Full ten-state coherent propagation, reduced 4D+3A propagation, and digitized experiment](results/figures/coherent/coherent_full_vs_reduced.png)
+![Full ten-state and reduced 4D+3A propagation](results/figures/coherent/coherent_full_vs_reduced.png)
 
-The independently propagated 4D+3A Hamiltonian follows the full ten-state coherent ensemble with an RMSE of `0.01830`, validating the reduction over the complete 99.5 fs window.
+### Pathway-resolved transfer
 
-### Pathway-resolved charge transfer
-
-![Integrated positive probability flux for all donor-acceptor channels](results/figures/coherent/dominant_transfer_channels.png)
-
-The largest forward activity occurs through `D2 -> A1`, but its much smaller signed flux reveals strong back-and-forth recrossing rather than irreversible one-way transfer.
+![Integrated positive probability flux](results/figures/coherent/dominant_transfer_channels.png)
 
 ### Donor-acceptor coherence
 
-![Mean donor-acceptor coherence over ten nuclear trajectories](results/figures/coherent/donor_acceptor_coherence.png)
+![Mean donor-acceptor coherence](results/figures/coherent/donor_acceptor_coherence.png)
 
-The donor-acceptor density-matrix block reaches a mean Frobenius norm of `0.4262` at `77.5 fs`, demonstrating persistent coherent mixing across the fragment partition.
-
-## Read the report
-
-- [Compiled capstone report](report/Project_Report.pdf)
-- [LaTeX source](report/Project_Report.tex)
-
-## Final outputs
-
-All compact submission outputs are under [`results/`](results/):
-
-- machine-readable headline metrics;
-- plain and Boltzmann FSSH comparison;
-- coherent/reduced-model summary;
-- pair-resolved donor-acceptor fluxes;
-- the original publication-ready PDF and PNG figures generated by the coherent and Libra analysis scripts;
-
-Large raw trajectories, 2,000 frame-level electronic archives, checkpoints, and full NPZ working arrays are intentionally excluded. They are regenerated by the documented workflow and are not needed to inspect or grade the final scientific conclusions.
-
-## Repository map
+## Repository layout
 
 | Path | Purpose |
 |---|---|
-| `01_geometry/` | Published 176-atom structure and validation |
-| `03_aimd/production_starts/` | Exact starting structures for ten production replicas |
-| `03_aimd/scripts/` | Ordered production and analysis programs |
-| `03_aimd/slurm/` | Portable HPC submission templates |
-| `03_aimd/experiment_shg_digitized.csv` | Approximate digitization of the published SHG trace |
-| `docs/` | Method, reproducibility, and interpretation |
-| `results/` | Final compact numerical outputs and figures |
-| `report/` | Capstone report in TeX and PDF |
+| `data/` | Geometry, fragment map, exact production starts, and digitized experiment |
+| `src/` | All Python and Slurm source code, ordered by execution stage |
+| `docs/` | Scientific method, reproducibility, and result interpretation |
+| `results/` | Compact numerical outputs and original publication-ready figures |
+| `report/` | Capstone report in LaTeX and PDF |
+
+The initial frontier analysis, PySCF/geomeTRIC relaxation, production-start extraction, AIMD, electronic extraction, state tracking, Libra calculations, reduced model, and final analyses are all retained under [`src/`](src/).
 
 ## Quick validation
 
@@ -117,64 +91,82 @@ conda activate pc60-pyscf
 make check
 ```
 
-## Full workflow
+## Calculation sequence
 
-Run from `03_aimd/`:
+All commands are run from the repository root.
+
+### 1. Initial structure and orbital checks
 
 ```bash
-sbatch slurm/01_aimd_array.slurm
-sbatch slurm/02_electronic_array.slurm
-sbatch slurm/03_tracking_array.slurm
-sbatch slurm/04_libra_array.slurm
-
-python scripts/05_analyze_fssh.py --root output_libra/fssh --ntraj 10
-python scripts/06_build_reduced_model.py --root output_tracked --ntraj 10
-python scripts/12_analyze_coherent_mechanism.py \
-  --root output_reduced_4d3a \
-  --ntraj 10 \
-  --experiment experiment_shg_digitized.csv \
-  --outdir output_coherent_mechanism
+python src/00_validate_geometry.py
+sbatch src/slurm/00_initialization.slurm
 ```
 
-For the detailed-balance sensitivity calculation:
+The exact ten production starting structures are tracked under `data/production_starts/`. Their source frames are listed in `manifest.csv`. To repeat the extraction from the corresponding thermalization trajectory:
 
 ```bash
-BOLTZMANN=1 OUTROOT=output_libra/fssh_boltzmann \
-  sbatch slurm/04_libra_array.slurm
+python src/03_prepare_replicas.py \
+  --trajectory output_thermalization/aimd.md.xyz
+```
 
-python scripts/11_compare_fssh_variants.py \
+### 2. Production AIMD and electronic Hamiltonians
+
+```bash
+sbatch src/slurm/01_aimd_array.slurm
+sbatch src/slurm/02_electronic_array.slurm
+sbatch src/slurm/03_tracking_array.slurm
+```
+
+### 3. Libra CPA-FSSH
+
+```bash
+sbatch src/slurm/04_libra_array.slurm
+
+BOLTZMANN=1 OUTROOT=output_libra/fssh_boltzmann \
+  sbatch src/slurm/04_libra_array.slurm
+```
+
+### 4. Analysis
+
+```bash
+python src/08_analyze_fssh.py \
+  --root output_libra/fssh --ntraj 10
+
+python src/09_build_reduced_model.py \
+  --root output_tracked --ntraj 10
+
+python src/10_plot_libra_experiment.py \
+  --libra-root output_libra/fssh \
+  --tracked-root output_tracked \
+  --experiment data/experiment_shg_digitized.csv \
+  --outdir output_libra/final_figures \
+  --ntraj 10
+
+python src/11_compare_fssh_variants.py \
   --plain-root output_libra/fssh \
   --boltzmann-root output_libra/fssh_boltzmann \
   --tracked-root output_tracked \
-  --experiment experiment_shg_digitized.csv \
-  --outdir output_libra/final_comparison \
+  --experiment data/experiment_shg_digitized.csv \
+  --outdir output_libra/final_figures_boltzmann \
   --ntraj 10
+
+python src/12_analyze_coherent_mechanism.py \
+  --root output_reduced_4d3a \
+  --ntraj 10 \
+  --experiment data/experiment_shg_digitized.csv \
+  --outdir output_coherent_mechanism
 ```
 
-See [docs/REPRODUCIBILITY.md](docs/REPRODUCIBILITY.md) for inputs, output contracts, and environment boundaries.
+## Terminology
 
-## Important terminology
+No TDDFT calculation was performed. The nonadiabatic quantities are Kohn-Sham orbital time-derivative couplings obtained from cross-geometry overlaps. “Exact coherent propagation” means numerically exact matrix-exponential propagation within the specified finite, trajectory-dependent active-space Hamiltonian; it is not exact many-electron molecular dynamics.
 
-No TDDFT calculation was performed. The nonadiabatic quantities are Kohn-Sham orbital time-derivative couplings obtained from cross-geometry overlaps,
+`data/experiment_shg_digitized.csv` is an approximate digitization of the black SHG curve in Figure 3A of Yamijala and Huo, *J. Phys. Chem. A* **2021**, 125, 628–635. It is not the original raw experimental dataset and has no original experimental error bars.
 
-\[
-O_{ij}^{(n)}=\langle\psi_i(R_n)|\psi_j(R_{n+1})\rangle,
-\qquad
-D^{(n)}=\frac{1}{\Delta t}\log U^{(n)},
-\]
+## Report, citation, and license
 
-where `U` is the closest unitary polar factor after state assignment and phase correction. The propagated single-particle vibronic Hamiltonian is
+- [Compiled report](report/Project_Report.pdf)
+- [LaTeX source](report/Project_Report.tex)
+- [Citation metadata](CITATION.cff)
 
-\[
-H_{\mathrm{vib}}=E_{\mathrm{mid}}-iD.
-\]
-
-“Exact coherent propagation” means numerically exact matrix-exponential propagation within this finite, trajectory-specific active-space Hamiltonian. It is not a claim of exact many-electron molecular dynamics.
-
-## Experimental comparison
-
-`03_aimd/experiment_shg_digitized.csv` is an approximate digitization of the black SHG curve in Figure 3A of Yamijala and Huo, *J. Phys. Chem. A* **2021**, 125, 628-635. It is not the original raw experimental dataset and carries no original experimental error bars.
-
-## Citation and license
-
-Citation metadata are provided in [`CITATION.cff`](CITATION.cff). Source code is released under the MIT License. Published molecular coordinates and literature-derived data retain their original attribution.
+Source code is released under the MIT License. Published molecular coordinates and literature-derived data retain their original attribution.

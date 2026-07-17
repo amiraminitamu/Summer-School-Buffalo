@@ -16,7 +16,8 @@ replica=$(printf "%02d" "${SLURM_ARRAY_TASK_ID}")
 outroot="${OUTROOT:-output_libra/fssh}"
 extra=()
 [[ "${BOLTZMANN:-0}" == "1" ]] && extra+=(--boltzmann)
-"${PYTHON}" scripts/04_run_fssh.py \
+
+"${PYTHON}" src/07_run_fssh.py \
   --input "output_tracked/traj_${replica}/tracked_data.npz" \
   --outdir "${outroot}/traj_${replica}" \
   --nframes 200 --nsh "${NSH:-20000}" --substeps "${SUBSTEPS:-200}" \

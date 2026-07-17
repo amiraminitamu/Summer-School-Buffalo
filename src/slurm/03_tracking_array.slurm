@@ -13,7 +13,8 @@ cd "${SLURM_SUBMIT_DIR}"
 mkdir -p logs output_tracked
 PYTHON="${PYSCF_PYTHON:-python}"
 replica=$(printf "%02d" "${SLURM_ARRAY_TASK_ID}")
-"${PYTHON}" scripts/03_track_states.py \
+
+"${PYTHON}" src/06_track_states.py \
   --trajectory "output_production/traj_${replica}/aimd.md.xyz" \
   --raw-dir "output_electronic/traj_${replica}/raw_frames" \
   --initial-state "output_electronic/traj_${replica}/initial_state.npz" \

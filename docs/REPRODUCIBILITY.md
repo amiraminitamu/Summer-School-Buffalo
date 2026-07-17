@@ -12,71 +12,97 @@ conda activate pc60-pyscf
 make check
 ```
 
-The validation checks the published 176-atom geometry and compiles every retained Python source.
+This validates the 176-atom geometry and byte-compiles every Python program under `src/`.
 
-## 2. Production environments
+## 2. Source and input inventory
+
+All executable code is under `src/`, ordered by stage. The directory includes:
+
+- geometry validation;
+- frontier-orbital and donor-LUMO analysis;
+- initial PySCF/geomeTRIC relaxation;
+- extraction of the ten production starting structures;
+- PySCF AIMD and electronic-data generation;
+- state tracking and matrix-log derivative couplings;
+- Libra CPA-FSSH;
+- FSSH aggregation and experiment comparison;
+- the 4D+3A reduced model;
+- coherent dynamics, coherence, and channel-current analysis.
+
+Fixed inputs are under `data/`. The exact production starts are tracked, so the final calculations do not depend on reproducing an earlier thermalization trajectory bit-for-bit.
+
+## 3. Environments
 
 Two execution environments are used:
 
-- `PYSCF_PYTHON`: PySCF, PySCF-dispersion, NumPy, SciPy, and Matplotlib.
-- `LIBRA_PYTHON`: `liblibra_core`, NumPy, and SciPy.
+- `PYSCF_PYTHON`: PySCF, PySCF-dispersion, NumPy, SciPy, Matplotlib, geomeTRIC;
+- `LIBRA_PYTHON`: `liblibra_core`, NumPy, SciPy.
 
-Export these variables before `sbatch`, or replace them with site-specific module/Conda activation in the portable Slurm files.
+Export these variables before `sbatch`, or replace them with site-specific module or Conda activation in the Slurm files.
 
-## 3. Production run order
-
-Run from `03_aimd/`:
+## 4. Initialization
 
 ```bash
-sbatch slurm/01_aimd_array.slurm
-sbatch slurm/02_electronic_array.slurm
-sbatch slurm/03_tracking_array.slurm
-sbatch slurm/04_libra_array.slurm
+python src/00_validate_geometry.py
+sbatch src/slurm/00_initialization.slurm
 ```
 
-The stages generate ten independent 100 fs nuclear trajectories, 2,000 electronic snapshots, tracked ten-state Hamiltonians, and plain CPA-FSSH ensembles.
+The initialization job performs the static donor-LUMO projection and the PySCF/geomeTRIC relaxation. The exact production starting structures are already tracked under `data/production_starts/`.
 
-Aggregate and analyze:
+`src/03_prepare_replicas.py` reproduces their extraction when the source thermalization trajectory is available:
 
 ```bash
-python scripts/05_analyze_fssh.py --root output_libra/fssh --ntraj 10
-python scripts/06_build_reduced_model.py --root output_tracked --ntraj 10
-python scripts/12_analyze_coherent_mechanism.py \
-  --root output_reduced_4d3a \
-  --ntraj 10 \
-  --experiment experiment_shg_digitized.csv \
-  --outdir output_coherent_mechanism
+python src/03_prepare_replicas.py \
+  --trajectory output_thermalization/aimd.md.xyz
 ```
 
-## 4. Detailed-balance sensitivity
+## 5. Production order
+
+Run from the repository root:
+
+```bash
+sbatch src/slurm/01_aimd_array.slurm
+sbatch src/slurm/02_electronic_array.slurm
+sbatch src/slurm/03_tracking_array.slurm
+sbatch src/slurm/04_libra_array.slurm
+```
+
+These stages generate ten 100 fs nuclear trajectories, 2,000 electronic snapshots, tracked ten-state Hamiltonians, and plain CPA-FSSH ensembles.
+
+For the detailed-balance sensitivity calculation:
 
 ```bash
 BOLTZMANN=1 OUTROOT=output_libra/fssh_boltzmann \
-  sbatch slurm/04_libra_array.slurm
+  sbatch src/slurm/04_libra_array.slurm
+```
 
-python scripts/11_compare_fssh_variants.py \
+## 6. Analysis
+
+```bash
+python src/08_analyze_fssh.py --root output_libra/fssh --ntraj 10
+python src/09_build_reduced_model.py --root output_tracked --ntraj 10
+
+python src/10_plot_libra_experiment.py \
+  --libra-root output_libra/fssh \
+  --tracked-root output_tracked \
+  --experiment data/experiment_shg_digitized.csv \
+  --outdir output_libra/final_figures --ntraj 10
+
+python src/11_compare_fssh_variants.py \
   --plain-root output_libra/fssh \
   --boltzmann-root output_libra/fssh_boltzmann \
   --tracked-root output_tracked \
-  --experiment experiment_shg_digitized.csv \
-  --outdir output_libra/final_comparison \
-  --ntraj 10
+  --experiment data/experiment_shg_digitized.csv \
+  --outdir output_libra/final_figures_boltzmann --ntraj 10
+
+python src/12_analyze_coherent_mechanism.py \
+  --root output_reduced_4d3a --ntraj 10 \
+  --experiment data/experiment_shg_digitized.csv \
+  --outdir output_coherent_mechanism
 ```
 
-## 5. Inputs and determinism
+## 7. Determinism and output contracts
 
-The exact starting geometries are under `03_aimd/production_starts/`; their source frames are listed in `manifest.csv`. AIMD and FSSH random seeds are deterministic functions of the replica index in the Slurm launchers. Each computational stage writes its arguments and diagnostics alongside its numerical arrays.
+AIMD and FSSH seeds are deterministic functions of the replica index in the Slurm launchers. Each stage writes its arguments and diagnostics beside its numerical arrays.
 
-## 6. Final output contracts
-
-The submission outputs are compact and tracked under `results/`:
-
-- `current_results.json`: headline metrics;
-- `fssh_summary.csv`: plain/Boltzmann/experiment comparison;
-- `coherent_summary.json`: coherent and reduced-model validation metrics;
-- `donor_acceptor_channel_flux.csv`: pair-resolved flux integrals;
-- `figures/`: final publication-ready SVG figures.
-
-The compiled report is tracked separately under `report/Project_Report.pdf` together with its LaTeX source.
-
-Raw AIMD trajectories, frame-level orbital arrays, checkpoints, and full NPZ working files are excluded because they are multi-gigabyte intermediates. They are regenerated by the scripts and fixed inputs above.
+Compact submission outputs are tracked under `results/`, including headline metrics, time-resolved ensemble tables, pair-resolved currents, and the original PDF/PNG figures. Raw trajectories, frame-level orbital archives, checkpoints, and full NPZ working files are excluded because they are multi-gigabyte intermediates regenerated by the retained code and inputs.

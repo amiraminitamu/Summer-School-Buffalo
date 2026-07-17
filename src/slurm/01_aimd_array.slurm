@@ -17,8 +17,9 @@ export OPENBLAS_NUM_THREADS="${SLURM_CPUS_PER_TASK}"
 PYTHON="${PYSCF_PYTHON:-python}"
 replica=$(printf "%02d" "${SLURM_ARRAY_TASK_ID}")
 seed=$((2026071400 + SLURM_ARRAY_TASK_ID))
-"${PYTHON}" scripts/01_run_aimd.py \
-  --xyz "production_starts/start_${replica}.xyz" \
+
+"${PYTHON}" src/04_run_aimd.py \
+  --xyz "data/production_starts/start_${replica}.xyz" \
   --basis 6-31g --xc pbe-d3bj --grid-level 0 \
   --dt-fs 0.5 --tau-fs 100 --steps 200 --temperature 300 \
   --seed "${seed}" --threads "${SLURM_CPUS_PER_TASK}" \

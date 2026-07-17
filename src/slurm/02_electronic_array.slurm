@@ -16,7 +16,8 @@ export MKL_NUM_THREADS="${SLURM_CPUS_PER_TASK}"
 export OPENBLAS_NUM_THREADS="${SLURM_CPUS_PER_TASK}"
 PYTHON="${PYSCF_PYTHON:-python}"
 replica=$(printf "%02d" "${SLURM_ARRAY_TASK_ID}")
-"${PYTHON}" scripts/02_extract_electronic.py \
+
+"${PYTHON}" src/05_extract_electronic.py \
   --trajectory "output_production/traj_${replica}/aimd.md.xyz" \
   --outdir "output_electronic/traj_${replica}" \
   --start 0 --stop 200 --stride 1 --dt-fs 0.5 \
