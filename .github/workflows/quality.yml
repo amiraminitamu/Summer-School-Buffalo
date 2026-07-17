@@ -18,10 +18,14 @@ jobs:
         run: python src/00_validate_geometry.py
       - name: Compile Python sources
         run: python -m compileall -q src
-      - name: Reject stale numbered source directories
+      - name: Check source-code location
         run: |
-          test ! -e 01_geometry
-          test ! -e 03_aimd
+          stale=$(find 01_geometry 03_aimd -type f \( -name '*.py' -o -name '*.slurm' -o -name '*.sbatch' \) 2>/dev/null || true)
+          if [ -n "$stale" ]; then
+            echo "Executable source remains outside src/:"
+            echo "$stale"
+            exit 1
+          fi
       - name: Reject accidental large files
         run: |
           python - <<'PY'
