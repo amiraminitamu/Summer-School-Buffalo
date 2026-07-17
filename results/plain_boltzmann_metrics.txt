@@ -1,0 +1,29 @@
+Plain and Boltzmann CPA-FSSH versus digitized experiment
+===========================================================
+
+Comparison interval: 0.0-99.5 fs
+Nuclear trajectories: 10
+Maximum coherent-curve difference between reruns:
+  0.000e+00
+
+Plain CPA-FSSH
+  initial population: 0.00139083
+  final population:   0.28085041
+  RMSE:               0.19221366
+  MAE:                0.17923229
+  first P >= 0.25:    64.50 fs
+  first P >= 0.50:    nan fs
+
+Boltzmann-rescaled CPA-FSSH
+  initial population: 0.00139083
+  final population:   0.89890263
+  RMSE:               0.30455336
+  MAE:                0.27570139
+  first P >= 0.25:    12.50 fs
+  first P >= 0.50:    32.50 fs
+
+Endpoint Boltzmann effect:
+  +0.61805222
+
+The experimental curve is an approximate digitization of Figure 3A,
+not the original experimental data.
